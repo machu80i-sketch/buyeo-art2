@@ -1,0 +1,2562 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>한국미술협회 부여지부 관리시스템</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+<script>
+(function(){
+  try{
+    firebase.initializeApp({
+      apiKey:"AIzaSyBEBi64at3QB29qEv0SffRaqxcjhLu137E",
+      authDomain:"buyeo-art.firebaseapp.com",
+      projectId:"buyeo-art",
+      storageBucket:"buyeo-art.firebasestorage.app",
+      messagingSenderId:"854518175306",
+      appId:"1:854518175306:web:91284c53a6e6b8c01578b3"
+    });
+    window._db=firebase.firestore();
+    window._st=firebase.storage();
+    window._fbOk=true;
+  }catch(e){console.error("FB init:",e);window._fbOk=false;}
+})();
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700&display=swap" rel="stylesheet"/>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Noto Sans KR',sans-serif;background:#f0f2f5;min-height:100vh;}
+  input,select,textarea,button{font-family:'Noto Sans KR',sans-serif;}
+  ::-webkit-scrollbar{width:6px;height:6px;}
+  ::-webkit-scrollbar-track{background:#f1f1f1;}
+  ::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px;}
+  .spin{animation:spin 1s linear infinite;display:inline-block;}
+  @keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useMemo, useEffect, useRef, useCallback } = React;
+
+// GitHub Pages iframe 정책상 window.confirm/alert 차단됨 → fallback true 반환
+const _origConfirm = window.confirm;
+window.confirm = function(msg) { try { return _origConfirm.call(window, msg); } catch(e) { return true; } };
+
+
+const LOGO = "data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCACDAJsDASIAAhEBAxEB/8QAHQABAAEEAwEAAAAAAAAAAAAAAAECBgcIBAUJA//EADoQAAEDAwMCBAQEBAQHAAAAAAEAAgMEBREGByESMQhBUWETIjJxFEKR0YGhscEWI1LhFTNDVHKS8f/EABwBAQABBQEBAAAAAAAAAAAAAAAEAQMFBgcCCP/EADARAAICAQIEBAQFBQAAAAAAAAABAgMEBREGEiExQVFhcRMiI4EUFVKRoTNCwdHw/9oADAMBAAIRAxEAPwDctERAEREAREQBFBOFHWMoCpFAdlUmRrc9RA+6ArRdbXX600QJqa2JmO+XBW1X7q6GoZPh1F6ha70yP3XqMJS7IlU4OTf/AE62/ZMvdFYB3i2/He+RfqP3XZ2rcTSNzaHUd2heD25Cq65x7ovWaTnVrmnTJL2ZdiLj01bT1MYkglZI09i05X26uOy8EBpx6MqRMoDlCgREQBERAEREARQThQX4GSgD854XCu10t9ppH1NfUxwRsHUepwB/grF3Q3Ws2kqZ8MMjKqvIw2Jpzg+61c1jrbUOqax81xrpTH1ZZEDgNHpx3UqjFnb17I2/QeDsvVPq2fJX5vu/ZGeNa7/Wyic+nsNO6rd2+IT0gFYe1Huzq+8yva+4Oihd+VvkFYR5dnzUkB3DRyspXiVwXY6rp3C2m4EdoV8z831ZyZrhXzPLpKyZxJycvK48hdJy9xcfcrtrLpq+XmcRUNuqHE9iYyB+qyDpzYnVle4GviFHEfzdQJXud1dfdk7K1TAwV9WyMf23/YxMeORyvpHPLHwyVzMehWxFB4cKcOa+ovshH5mhv+y7is8PdilpjHDWvikxw9WXnVbmDs430dPbnb+zMAaR1tqLTVSJbfcJAwuBc1xJBHotndrN2bTqyJlJVuFLcAAOhx+pYn1jsFeLTQPqbRVuuHRy5uADj+SxCTcLNdBgy0tVA/PbBBC8TrqyFvDuWMzT9I4mpcseS514ro/uvI9BAT3zwp9wsY7Ca7OrNOtgq5Aa+nHS/Pd+PzLJjSeQsTOLhJxZxvPwrcHIlj2r5olaIi8kQIiIAignCguxycADugIme2Npe9wa0DJJ8lgnereSK3CWyadkElRy2SUH6fsvj4g91H0Ik09Y5wJCOmeRruR7LW573SkzSOLnk5JKyOJic3zT7HTeE+D1ao5mYuneMf8AL/0fWuq6iuq31NVK6SV7up7nHOV8Tgkk59lSSSeFknZzbWt1jcRUztdFboj87/8AUfRZOdkao7vsdNzcyjAod1z2jH/uhbeitGXvVdwZS22kd0H6pHDDQFsVoLYyw2iNk14P46o7ljhwCsn6bsVusNtjorbTshjY0A9I5J9V2YYB91hr8udnRdEca1vjXMz24Y7+HD07v3Zw7fa6CggbBSUsUTG9gGhczgcBThMKIaXKTk+aXVgYQ8JhThChQ75uPLzWIN8tsaK/Wqa8W2IQ3CEFzulv1hZhIBUSMa+MscAQRghe67HXLmiTtO1C/T8iN9L2a/leTNRvDdXT2jcU0snUz4g+G5h8ituMjIPqtcTYW2jxDNbCwhtQ8TYxwMlbHcho+yvZUueal6Gx8Z315WTVkwW3PBMrRB2RRjTgiIgKZBkYWNd+NdN0npp8NG9puFSOiMZ7A8ErItbMynp3zyOw1jSSStJd3NUSan1jV1fxHGBjy2NueApOJT8Wez7G28H6KtTzeaxfJDq/XyRalZUyVlXJU1UjpJZHFznHzXx+r2CHGOyqjjfI5rWNJc44AHcrPJJdju6iorZdi5ttdJ1ertRwW+njd8EPBmfjgNzz/Jbp6ZsdFYLRBbaCFsbI2gEgcuPqVY/h60hFp/RsFZJGRV1jfiPLh8zc+SydjhYPLvds9vBHDOMdelqOW6YP6cHsvV+LDeylAiiGnBERAEUHPkqZZWRMdJI4NY0FznHsAgK0WAt1fFBorRlzdaqZk1zqh9ToACxnsckLpNE+LvR94u0NuuNDV0Zmd0iVwb0N+/KAy7cdMmq3Yp78Q7oipQ3txnlXz298rj2+rprhSRV1FMyenmb1MkaeCFyMZVW2yRkZM71BS/tWy9ipERUI4RCozwgLA39vUtm28rZKZ4ZUPHSzP2K0ukcXuLnDDnHJWyHi7uk8NFbLdG7EcvWZB64xj+q1uBJOfNZrT4bVt+Z2/gLEVOlq3xm2/wBuhJ88n+CuvaWym/63oaTPDXfEPuAR+6tMkHus3+FGzRz6kmuz2uLoGFjT5DJ/2V/Is5K2zP6/mfg9OutT67Pb3Zs9SRMgp2Qxt6WsaAAvqob2UrXj5yb3e4RQSc4CIUJRUgkhC5NwT2KxZ4pNWVOjdnrndKXPxpMQAjy6/l/uspckghYC8d8T5NiqqQOIayqiy31+cIDztq55KmqlqZSXPkeXOJPmSvm0/OHDg5VJKlp+cfdAeoPhWqZ6jZmxmd5d007WjP2Cyp55CxL4Th07L2Y5/wCg3+gWWhwgJREQAqkjJBHkqkwgNb/F+XCptDunjD+f/Va+9x1Bbm76aH/xfpk/hm5rqcEw/wAf/gWoFytNwt1VNR1FJKyWJ2HDpKzODZF18u/Y7hwNqFF2mxoUvmhvuvvucHgt91tL4TrXJSaVrqyZmPjytMZ9RysI7ebcX3VVfAG0kkdGXf5krgRgLcHSNio9O2KntNH/AMqFoGfUq3n3RceRdzGce61QsX8FXJOUmm/RI7lqlUt+6Z5WKORbEnvyqewPKiVzWNL3uDWjuSsI7372W3TdLPabHO2e5FpBcDxH7q7TRO+ajBbl6jHsvmoQW5dG6O7untDwOjMja2u/7eM8/ssWWvxPh1yjZWWSUQvdycj5R+q1zutfVXWvlrq6Z8skp6i5xyuN9TSStkp0miMNp9X5m1UaLjxhtNbvzPRfSGpLXqi0RXS1VLJoZB+XyPorZ8QNgGo9qbzQuYJOmF0wBGfpGf7LDPguuVUKu5W/rcaclpDSeB3W0FXBHU0stNMMxysLHD1BGFr2XQqLnBeBrObjrHvda7I8dK6Mw1k0RBBZI5uD7FfJvDgfdZa8UmhJ9FbnVw+D0UVY/wCLT4GBjz/nlYm4UcinpV4N7vTXTZygigcC6maIngeRACzUOAAStGvADr9ltvtRo6sc2OCpzLG9zu7/AEwt5eByPNAVIiIAiIgOHd6oUVE+pcwvawZIHoups9RpnUkIrKJlLU/6uB1A+4XfVDGSROjkALXDBBWpG7lJqnarW0t209VTQ2ysf1dIOWj257KVi0K9uCez8CbhUfGk4xltLw9fQ2zp4IIW9MMTIwPJrcL6fKVqxprxN19OWwXWzslbjmYE5/kV3tX4naKOFxgs7ZHjs05/dXZabkp7cpcs0vLjLZx3NixnOc5Vt6x1tp7SlDJU3SviY5oOGNcC4n7LWLVPiQ1LdqR0dtoWWxx/Ow5I/UlYgvV7ul8q3Vd0rZqmUnJ6ncfp2UqjR7G97HsibjaFZJ/V6L+TLO7G/N51GX0Nge+hoiS1x7l4WGZZZJpjNK8vc88ucc5KoaeeMc+SEEAhhBHn7LYKceuiPLBbGy4+NXjx5a1sCTnnsqo2STVDIomFz3nAaBkkrk2m2V92qm0lupJKiVxAAY0n9Vs9sTsY20uhv+qWiSr4dHTnkM9FaycuvHjvJ9fItZedXix3k+vgjv8Awt6Cn0vpuS53GPorK7DugjloGf3WaDjPupiYxjGtY0NaBgADspwM5wtQutldY5y8TRsi6V9jsl3ZizxFbU0W5ukZadrWR3KBpNPLjnPfC82tb6UvGkb5PaLzSSQTQvLSS3h32K9d89JwSrA3Y2n0puJbnwXagibVH6Klow5v6K0Wjy80vd6qwX6jvNC8tnpJmyswcZIOV6V+Hzd+zbjaYgP4lkVziaGTRPdgk+oWr+43hE1TaZXS6YqP+Jw9XZzmtIH8lYtp2x3g0Zem1Fpoq2jqmEEPh5H9wgPTNFh3YrU259zoIKPWGno4BHGAaouHU/3Iz/ZZh59UBKIiAh4BHPZdFrHTFo1XZ5bXd6ds0LxwSOWnyIXfEKMD0VYycXuu5WMnGSlE023Q2Fv1gqZamwt/G0HLufqA9MLD9fQXCgaRXUU9Oc4/zGYXpSQMYIXQah0bpnULcXiz01V/5sBWZx9YnBbWrcz2NrtkElatzzr6mcHqxjyU9TSR0DOfLC3sqdl9vpfosVKw5zwwLk0uz+31O5r/APDlG8t7dUYUv86q/Sya+IKf0s0ctlgvdwmjbR2yqlLzgFrOFl3Qnh1v93DJr7N+Ap38joJLv04W2dnsdqtMYjt1DDTtxjDGgLscD0UK7WLJraC2IGRrtti2rWxZW3+2+m9GUrG0FIx9QBh07mjqcry/oqsD0U4CxM5ym+aT3ZhbLJWS5pPdkN5ClBwi8ngjvkKPt+iqRAR37qgsjJyY2k+7V9EQFIAbwAB9gpyfIKUQBERAEREAUHuiIBgDsFQSfVEQoyqI5afuqkRCqCIiAIiIAiIgCIiAIiID/9k=";
+
+const initialMembers = [
+  { id:1,  name:"강선구", gender:"남", zip:"", address:"옥산면 내대리 404-1 (옥산동로 102번길)", phone:"010-8738-5411", field:"서예",  position:"자문",          birth:"", joined:"" },
+  { id:2,  name:"강호예", gender:"여", zip:"33125", address:"부여군 규암면 흥수로 878 부여센트럴휴엔하임@211동801호", phone:"010-3135-0209", field:"서예",  position:"",            birth:"63.10.20", joined:"" },
+  { id:3,  name:"김나영", gender:"여", zip:"", address:"", phone:"", field:"수채화", position:"", birth:"", joined:"" },
+  { id:4,  name:"김동필", gender:"남", zip:"", address:"부여군 규암면 수북로 41번길 9-7", phone:"010-9203-5958", field:"서양화", position:"조직국장", birth:"68.3.6", joined:"" },
+  { id:5,  name:"김명애", gender:"여", zip:"33159", address:"부여읍 성왕로 328번길 11 왕궁@301동206호", phone:"010-7501-7210", field:"서양화", position:"서양화분과장", birth:"54.3.14", joined:"" },
+  { id:6,  name:"김미희", gender:"여", zip:"", address:"부여군 부여읍 성왕로 352번길 11 왕궁@304-301", phone:"010-9028-6136", field:"서예",  position:"서예분과장", birth:"", joined:"" },
+  { id:7,  name:"김연소", gender:"남", zip:"33166", address:"부여군 금성로 20 동남@21동 205호", phone:"010-8819-4944", field:"한국화", position:"", birth:"53.3.3", joined:"" },
+  { id:8,  name:"김용란", gender:"여", zip:"", address:"부여군 부여읍 성왕로 328번길 18-7 홍선금동@ 108-506", phone:"010-6789-0539", field:"서양화", position:"", birth:"", joined:"" },
+  { id:9,  name:"김학순", gender:"남", zip:"", address:"", phone:"", field:"한국화", position:"", birth:"", joined:"" },
+  { id:10, name:"김형철", gender:"남", zip:"33142", address:"부여군 부여읍 나성로 69번길 7", phone:"010-3453-2828", field:"한국화", position:"청년신진작가담당국장", birth:"", joined:"" },
+  { id:11, name:"민경희", gender:"여", zip:"33171", address:"부여군 초촌면 신암로 123번길 25", phone:"010-8933-8022", field:"한국화", position:"지부장", birth:"", joined:"" },
+  { id:12, name:"박병규", gender:"남", zip:"33126", address:"부여군 규암면 수북로 14-16", phone:"010-3403-8677", field:"서양화", position:"서양화분과장", birth:"78.7.1", joined:"" },
+  { id:13, name:"박육례", gender:"여", zip:"", address:"충남 논산시 강산동시민로307번길28", phone:"010-5751-1256", field:"한국화", position:"", birth:"", joined:"" },
+  { id:14, name:"박재숙", gender:"여", zip:"33151", address:"부여읍 정림로 55-6(2층)", phone:"010-8351-5002", field:"한국화", position:"감사", birth:"", joined:"" },
+  { id:15, name:"박주희", gender:"여", zip:"", address:"부여읍 사비로 99번길 5 장수약국", phone:"010-5450-2005", field:"서예",  position:"총무/재무", birth:"", joined:"" },
+  { id:16, name:"박하얀", gender:"여", zip:"", address:"논산시 득안대로564-107", phone:"010-8811-6542", field:"한국화", position:"", birth:"", joined:"" },
+  { id:17, name:"서영진", gender:"",  zip:"", address:"", phone:"", field:"한국화", position:"", birth:"", joined:"" },
+  { id:18, name:"소경숙", gender:"여", zip:"", address:"부여근 부여읍 성왕로 352번길 11 왕궁@312-403", phone:"010-3435-4130", field:"서예",  position:"", birth:"", joined:"" },
+  { id:19, name:"손경옥", gender:"여", zip:"", address:"부여읍 논절로 18, 선하우스 D동301호", phone:"010-3785-9023", field:"한국화", position:"기획국장", birth:"", joined:"" },
+  { id:20, name:"송서영", gender:"여", zip:"", address:"부여군 규암면 흥수로 529번길 16-4", phone:"010-7194-7586", field:"한국화", position:"디지털미디어국장", birth:"", joined:"" },
+  { id:21, name:"송현호", gender:"여", zip:"", address:"부여읍 정동로 142번길 35", phone:"010-8930-0833", field:"한국화", position:"문인화분과장", birth:"", joined:"" },
+  { id:22, name:"신운선", gender:"여", zip:"33144", address:"부여군 부여읍 부여로 9-18", phone:"010-6425-6670", field:"서양화", position:"대외협력국장", birth:"", joined:"" },
+  { id:23, name:"신은승", gender:"여", zip:"", address:"논산시 관촉로 105", phone:"010-6482-5181", field:"한국화", position:"", birth:"", joined:"" },
+  { id:24, name:"염화자", gender:"여", zip:"", address:"", phone:"", field:"한국화", position:"", birth:"", joined:"" },
+  { id:25, name:"오석순", gender:"여", zip:"", address:"규암면 흥수로 878, 209동 502호", phone:"010-6811-4806", field:"한국화", position:"수석부회장", birth:"", joined:"" },
+  { id:26, name:"윤석순", gender:"여", zip:"", address:"충화면 만지서로 101-17", phone:"010-9241-2766", field:"서양화", position:"부회장", birth:"", joined:"" },
+  { id:27, name:"윤학상", gender:"남", zip:"", address:"부여읍 사비로 69-1", phone:"010-4554-9789", field:"서예",  position:"부회장", birth:"", joined:"" },
+  { id:28, name:"이란순", gender:"여", zip:"", address:"부여군 부여읍 사비로 49번길 13-5", phone:"", field:"공예",  position:"", birth:"", joined:"" },
+  { id:29, name:"이명진", gender:"여", zip:"", address:"부여군 초촌면 마름로 25", phone:"010-2034-7400", field:"한국화", position:"서각분과장", birth:"74.7.25", joined:"" },
+  { id:30, name:"이상용", gender:"남", zip:"", address:"부여읍 성왕로 352번길 11, 306-506(왕궁)", phone:"010-3377-1788", field:"공예",  position:"", birth:"", joined:"" },
+  { id:31, name:"이신교", gender:"남", zip:"", address:"논산시 체육로 48-6, 동신@104-102", phone:"010-8050-2315", field:"한국화", position:"전시운영국장", birth:"", joined:"" },
+  { id:32, name:"이옥우", gender:"여", zip:"", address:"규암면 무지개@101-1404", phone:"010-4531-2013", field:"서양화", position:"", birth:"", joined:"" },
+  { id:33, name:"이우규", gender:"남", zip:"33106", address:"은산면 충절로 나령2길 92", phone:"010-5438-5337", field:"한국화", position:"", birth:"", joined:"" },
+  { id:34, name:"장현정", gender:"여", zip:"33126", address:"부여군 규암면 수북로 14-16", phone:"010-5400-3144", field:"서양화", position:"사무국장", birth:"80.9.19", joined:"" },
+  { id:35, name:"전미호", gender:"여", zip:"33139", address:"부여읍 성왕로 207-8", phone:"010-2324-1113", field:"한국화", position:"", birth:"", joined:"" },
+  { id:36, name:"정규순", gender:"",  zip:"", address:"", phone:"", field:"", position:"", birth:"", joined:"" },
+  { id:37, name:"정찬국", gender:"남", zip:"33121", address:"부여군 규암면 호수로 32 대동황토방@ 101동 1002호", phone:"010-5454-1908", field:"공예",  position:"고문", birth:"", joined:"" },
+  { id:38, name:"정회상", gender:"남", zip:"", address:"부여읍 능안로 88", phone:"010-4213-8196", field:"서양화", position:"", birth:"", joined:"" },
+  { id:39, name:"조영안", gender:"남", zip:"", address:"논산시 시민로307번길28", phone:"010-2907-0216", field:"한국화", position:"", birth:"", joined:"" },
+  { id:40, name:"최윤옥", gender:"여", zip:"", address:"", phone:"", field:"", position:"", birth:"", joined:"" },
+  { id:41, name:"최은경", gender:"여", zip:"", address:"", phone:"", field:"", position:"", birth:"", joined:"" },
+  { id:42, name:"하미숙", gender:"여", zip:"", address:"", phone:"", field:"한국화", position:"", birth:"", joined:"" },
+  { id:43, name:"한보석", gender:"",  zip:"", address:"", phone:"", field:"", position:"", birth:"", joined:"" },
+  { id:44, name:"한정신", gender:"여", zip:"", address:"", phone:"", field:"한국화", position:"", birth:"", joined:"" },
+  { id:45, name:"함종호", gender:"남", zip:"", address:"", phone:"", field:"", position:"", birth:"", joined:"" },
+  { id:46, name:"홍봉오", gender:"",  zip:"", address:"", phone:"", field:"", position:"", birth:"", joined:"" },
+  { id:47, name:"홍순민", gender:"남", zip:"", address:"", phone:"", field:"", position:"", birth:"", joined:"" },
+  { id:48, name:"홍정희", gender:"여", zip:"", address:"", phone:"", field:"한국화", position:"", birth:"", joined:"" },
+  { id:49, name:"황경남", gender:"여", zip:"", address:"", phone:"", field:"한국화", position:"", birth:"", joined:"" },
+];
+
+const initialFees = [
+  { memberId:1,  name:"강호예",  entry:50000,  entry_date:"", y2023:100000, y2023_date:"", y2024:0,      y2024_date:"", y2025:100000, y2025_date:"", y2026:0,      y2026_date:"" },
+  { memberId:2,  name:"김나영",  entry:50000,  entry_date:"", y2023:100000, y2023_date:"", y2024:0,      y2024_date:"", y2025:0,      y2025_date:"", y2026:0,      y2026_date:"" },
+  { memberId:3,  name:"김명애",  entry:50000,  entry_date:"", y2023:100000, y2023_date:"", y2024:100000, y2024_date:"", y2025:100000, y2025_date:"", y2026:100000, y2026_date:"" },
+  { memberId:4,  name:"김미희",  entry:0,      entry_date:"", y2023:100000, y2023_date:"", y2024:100000, y2024_date:"", y2025:100000, y2025_date:"", y2026:0,      y2026_date:"" },
+  { memberId:5,  name:"김연소",  entry:50000,  entry_date:"", y2023:100000, y2023_date:"", y2024:100000, y2024_date:"", y2025:100000, y2025_date:"", y2026:0,      y2026_date:"" },
+  { memberId:6,  name:"김용란",  entry:50000,  entry_date:"", y2023:100000, y2023_date:"", y2024:100000, y2024_date:"", y2025:100000, y2025_date:"", y2026:100000, y2026_date:"" },
+  { memberId:7,  name:"김형철",  entry:0,      entry_date:"", y2023:100000, y2023_date:"", y2024:100000, y2024_date:"", y2025:0,      y2025_date:"", y2026:0,      y2026_date:"" },
+  { memberId:8,  name:"민경희",  entry:0,      entry_date:"", y2023:100000, y2023_date:"", y2024:100000, y2024_date:"", y2025:100000, y2025_date:"", y2026:0,      y2026_date:"" },
+  { memberId:9,  name:"박육례",  entry:50000,  entry_date:"", y2023:0,      y2023_date:"", y2024:0,      y2024_date:"", y2025:100000, y2025_date:"", y2026:0,      y2026_date:"" },
+  { memberId:10, name:"박병규",  entry:0,      entry_date:"", y2023:100000, y2023_date:"", y2024:100000, y2024_date:"", y2025:100000, y2025_date:"", y2026:0,      y2026_date:"" },
+  { memberId:11, name:"박재숙",  entry:0,      entry_date:"", y2023:100000, y2023_date:"", y2024:100000, y2024_date:"", y2025:0,      y2025_date:"", y2026:0,      y2026_date:"" },
+  { memberId:12, name:"박주희",  entry:0,      entry_date:"", y2023:100000, y2023_date:"", y2024:100000, y2024_date:"", y2025:100000, y2025_date:"", y2026:0,      y2026_date:"" },
+  { memberId:13, name:"소경숙",  entry:0,      entry_date:"", y2023:100000, y2023_date:"", y2024:100000, y2024_date:"", y2025:0,      y2025_date:"", y2026:0,      y2026_date:"" },
+  { memberId:14, name:"송서영",  entry:0,      entry_date:"", y2023:100000, y2023_date:"", y2024:100000, y2024_date:"", y2025:100000, y2025_date:"", y2026:0,      y2026_date:"" },
+  { memberId:15, name:"송현호",  entry:100000, entry_date:"", y2023:100000, y2023_date:"", y2024:100000, y2024_date:"", y2025:100000, y2025_date:"", y2026:100000, y2026_date:"" },
+  { memberId:16, name:"신운선",  entry:0,      entry_date:"", y2023:100000, y2023_date:"", y2024:100000, y2024_date:"", y2025:100000, y2025_date:"", y2026:0,      y2026_date:"" },
+  { memberId:17, name:"신은승",  entry:0,      entry_date:"", y2023:0,      y2023_date:"", y2024:0,      y2024_date:"", y2025:0,      y2025_date:"", y2026:100000, y2026_date:"" },
+  { memberId:18, name:"오석순",  entry:100000, entry_date:"", y2023:100000, y2023_date:"", y2024:100000, y2024_date:"", y2025:100000, y2025_date:"", y2026:100000, y2026_date:"" },
+  { memberId:19, name:"유승희",  entry:0,      entry_date:"", y2023:100000, y2023_date:"", y2024:100000, y2024_date:"", y2025:0,      y2025_date:"", y2026:0,      y2026_date:"" },
+  { memberId:20, name:"윤석순",  entry:50000,  entry_date:"", y2023:100000, y2023_date:"", y2024:100000, y2024_date:"", y2025:100000, y2025_date:"", y2026:0,      y2026_date:"" },
+  { memberId:21, name:"이란순",  entry:0,      entry_date:"", y2023:100000, y2023_date:"", y2024:0,      y2024_date:"", y2025:0,      y2025_date:"", y2026:0,      y2026_date:"" },
+  { memberId:22, name:"이상용",  entry:0,      entry_date:"", y2023:100000, y2023_date:"", y2024:100000, y2024_date:"", y2025:0,      y2025_date:"", y2026:0,      y2026_date:"" },
+  { memberId:23, name:"장현정",  entry:50000,  entry_date:"", y2023:100000, y2023_date:"", y2024:100000, y2024_date:"", y2025:100000, y2025_date:"", y2026:0,      y2026_date:"" },
+  { memberId:24, name:"전미호",  entry:50000,  entry_date:"", y2023:100000, y2023_date:"", y2024:100000, y2024_date:"", y2025:0,      y2025_date:"", y2026:100000, y2026_date:"" },
+  { memberId:25, name:"정규순",  entry:0,      entry_date:"", y2023:0,      y2023_date:"", y2024:0,      y2024_date:"", y2025:0,      y2025_date:"", y2026:0,      y2026_date:"" },
+  { memberId:26, name:"정찬국",  entry:0,      entry_date:"", y2023:100000, y2023_date:"", y2024:100000, y2024_date:"", y2025:100000, y2025_date:"", y2026:0,      y2026_date:"" },
+  { memberId:27, name:"최윤옥",  entry:50000,  entry_date:"", y2023:100000, y2023_date:"", y2024:0,      y2024_date:"", y2025:0,      y2025_date:"", y2026:0,      y2026_date:"" },
+  { memberId:28, name:"하미숙",  entry:0,      entry_date:"", y2023:100000, y2023_date:"", y2024:100000, y2024_date:"", y2025:100000, y2025_date:"", y2026:0,      y2026_date:"" },
+  { memberId:29, name:"한보석",  entry:50000,  entry_date:"", y2023:100000, y2023_date:"", y2024:0,      y2024_date:"", y2025:0,      y2025_date:"", y2026:0,      y2026_date:"" },
+  { memberId:30, name:"한정신",  entry:50000,  entry_date:"", y2023:100000, y2023_date:"", y2024:100000, y2024_date:"", y2025:100000, y2025_date:"", y2026:0,      y2026_date:"" },
+  { memberId:31, name:"함종호",  entry:0,      entry_date:"", y2023:100000, y2023_date:"", y2024:0,      y2024_date:"", y2025:0,      y2025_date:"", y2026:0,      y2026_date:"" },
+  { memberId:32, name:"홍봉오",  entry:50000,  entry_date:"", y2023:0,      y2023_date:"", y2024:0,      y2024_date:"", y2025:0,      y2025_date:"", y2026:0,      y2026_date:"" },
+  { memberId:33, name:"홍순민",  entry:0,      entry_date:"", y2023:100000, y2023_date:"", y2024:100000, y2024_date:"", y2025:0,      y2025_date:"", y2026:0,      y2026_date:"" },
+  { memberId:34, name:"홍정희",  entry:50000,  entry_date:"", y2023:100000, y2023_date:"", y2024:100000, y2024_date:"", y2025:100000, y2025_date:"", y2026:0,      y2026_date:"" },
+  { memberId:35, name:"황경남",  entry:0,      entry_date:"", y2023:100000, y2023_date:"", y2024:100000, y2024_date:"", y2025:100000, y2025_date:"", y2026:100000, y2026_date:"" },
+  { memberId:36, name:"김동필",  entry:0,      entry_date:"", y2023:0,      y2023_date:"", y2024:100000, y2024_date:"", y2025:0,      y2025_date:"", y2026:0,      y2026_date:"" },
+  { memberId:37, name:"윤학상",  entry:0,      entry_date:"", y2023:0,      y2023_date:"", y2024:0,      y2024_date:"", y2025:100000, y2025_date:"", y2026:0,      y2026_date:"" },
+  { memberId:38, name:"박하얀",  entry:0,      entry_date:"", y2023:0,      y2023_date:"", y2024:0,      y2024_date:"", y2025:100000, y2025_date:"", y2026:0,      y2026_date:"" },
+  { memberId:24, name:"염화자",  entry:0,      entry_date:"", y2023:0,      y2023_date:"", y2024:0,      y2024_date:"", y2025:0,      y2025_date:"", y2026:0,      y2026_date:"" },
+];
+
+const initialTransactions = [
+  { id:1,  date:"2025-01-01", desc:"전년도 이월",             amount:821352,  type:"income",  balance:821352 },
+  { id:2,  date:"2025-01-04", desc:"UMS수수료",               amount:-1000,   type:"expense", balance:820352 },
+  { id:3,  date:"2025-02-07", desc:"윤학상 회비",             amount:100000,  type:"income",  balance:920352 },
+  { id:4,  date:"2025-02-07", desc:"민경희 회비",             amount:100000,  type:"income",  balance:1020352 },
+  { id:5,  date:"2025-02-07", desc:"김미희 회비",             amount:100000,  type:"income",  balance:1120352 },
+  { id:6,  date:"2025-02-07", desc:"송서영 회비",             amount:100000,  type:"income",  balance:1220352 },
+  { id:7,  date:"2025-02-07", desc:"박병규 회비",             amount:100000,  type:"income",  balance:1320352 },
+  { id:8,  date:"2025-02-07", desc:"이명진 회비",             amount:100000,  type:"income",  balance:1420352 },
+  { id:9,  date:"2025-02-07", desc:"총회 23명 식대 (연잎담)", amount:-276000, type:"expense", balance:1144352 },
+  { id:10, date:"2025-02-07", desc:"황경남 회비",             amount:100000,  type:"income",  balance:1244352 },
+  { id:11, date:"2025-02-07", desc:"강호예 회비",             amount:100000,  type:"income",  balance:1344352 },
+  { id:12, date:"2025-02-08", desc:"장현정 회비",             amount:100000,  type:"income",  balance:1444352 },
+  { id:13, date:"2025-02-08", desc:"김용란 회비",             amount:100000,  type:"income",  balance:1544352 },
+  { id:14, date:"2025-02-08", desc:"신은승 회비",             amount:100000,  type:"income",  balance:1644352 },
+  { id:15, date:"2025-02-08", desc:"박주희 회비",             amount:100000,  type:"income",  balance:1744352 },
+  { id:16, date:"2025-02-08", desc:"오석순 회비",             amount:100000,  type:"income",  balance:1844352 },
+  { id:17, date:"2025-02-08", desc:"한정신 회비",             amount:100000,  type:"income",  balance:1944352 },
+  { id:18, date:"2025-02-08", desc:"윤석순 회비",             amount:100000,  type:"income",  balance:2044352 },
+  { id:19, date:"2025-02-08", desc:"김명애 회비",             amount:100000,  type:"income",  balance:2144352 },
+  { id:20, date:"2025-02-08", desc:"하미숙 회비",             amount:100000,  type:"income",  balance:2244352 },
+  { id:21, date:"2025-02-08", desc:"정찬국 회비",             amount:100000,  type:"income",  balance:2344352 },
+  { id:22, date:"2025-03-21", desc:"박하얀 회비",             amount:100000,  type:"income",  balance:2444352 },
+  { id:23, date:"2025-03-21", desc:"홍정희 회비",             amount:100000,  type:"income",  balance:2544352 },
+  { id:24, date:"2025-03-21", desc:"김연소 회비",             amount:100000,  type:"income",  balance:2644352 },
+  { id:25, date:"2025-03-24", desc:"신운선 회비",             amount:100000,  type:"income",  balance:2744352 },
+  { id:26, date:"2025-04-01", desc:"최은경 회비",             amount:100000,  type:"income",  balance:2844352 },
+  { id:27, date:"2025-04-07", desc:"UMS수수료",               amount:-1000,   type:"expense", balance:2843352 },
+  { id:28, date:"2025-04-11", desc:"송현호 회비",             amount:100000,  type:"income",  balance:2943352 },
+  { id:29, date:"2025-04-24", desc:"백제보전시도록 (장현정)",  amount:-200000, type:"expense", balance:2743352 },
+  { id:30, date:"2025-04-24", desc:"백제보전시 현수막 2군데",  amount:-100500, type:"expense", balance:2642852 },
+  { id:31, date:"2025-04-30", desc:"박하얀 개인전",           amount:-50000,  type:"expense", balance:2592852 },
+  { id:32, date:"2025-04-30", desc:"송서영 개인전",           amount:-50000,  type:"expense", balance:2542852 },
+  { id:33, date:"2025-05-05", desc:"UMS수수료",               amount:-1000,   type:"expense", balance:2541852 },
+  { id:34, date:"2025-06-06", desc:"UMS수수료",               amount:-1000,   type:"expense", balance:2540852 },
+  { id:35, date:"2025-07-09", desc:"UMS수수료",               amount:-1000,   type:"expense", balance:2539852 },
+  { id:36, date:"2025-08-11", desc:"한국예총부여",             amount:-300000, type:"expense", balance:2239852 },
+  { id:37, date:"2025-09-08", desc:"UMS수수료",               amount:-1000,   type:"expense", balance:2238852 },
+  { id:38, date:"2025-09-27", desc:"예금이자",                 amount:1170,    type:"income",  balance:2240022 },
+  { id:39, date:"2025-09-27", desc:"결산소득세",               amount:-160,    type:"expense", balance:2239862 },
+];
+
+const initialMeetings = [
+  { id:1, type:"정기총회", date:"2026-01-27", venue:"연잎담", attendCount:23,
+    attendees:["민경희","오석순","윤석순","윤학상","박재숙","박주희","장현정","김명애","김미희","송서영","강호예","황경남","이명진","김용란","신은승","한정신","전미호","신운선","정찬국","하미숙","홍정희","송현호","김연소"],
+    content:"2026년 정기총회 개최. 2025년 결산보고 및 2026년 사업계획 심의. 임원 선출 안건 논의. 환수금 상환 방안 협의." }
+];
+const initialProjects = [];
+
+const won = n => (n||0).toLocaleString()+"원";
+const fieldColors = {"서예":"#4f86c6","한국화":"#e07b54","서양화":"#5caa7f","공예":"#b07cc6","수채화":"#e8a838","":"#888"};
+
+function downloadExcel(sheets, filename) {
+  const wb = XLSX.utils.book_new();
+  sheets.forEach(s => { const ws = XLSX.utils.aoa_to_sheet(s.data); XLSX.utils.book_append_sheet(wb, ws, s.name); });
+  XLSX.writeFile(wb, filename);
+}
+async function saveToFirestore(key,data){
+  if(!window._fbOk||!window._db)return;
+  try{await window._db.collection("art-association").doc(key).set({data:JSON.stringify(data)});}catch(e){console.error(e);}
+}
+async function loadFromFirestore(key){
+  if(!window._fbOk||!window._db)return null;
+  try{const s=await window._db.collection("art-association").doc(key).get();if(s.exists)return JSON.parse(s.data().data);}catch(e){console.error(e);}
+  return null;
+}
+function subscribeFirestore(key,callback){
+  if(!window._fbOk||!window._db)return()=>{};
+  return window._db.collection("art-association").doc(key).onSnapshot(s=>{if(s.exists)try{callback(JSON.parse(s.data().data));}catch(e){};});
+}
+
+function SyncBadge({saving,dbReady}) {
+  if(!dbReady) return <span style={{fontSize:10,color:"#ffcc88",background:"rgba(0,0,0,.2)",borderRadius:20,padding:"3px 8px"}}>⏳ 연결중</span>;
+  if(saving) return <span style={{fontSize:10,color:"#aef",background:"rgba(0,0,0,.2)",borderRadius:20,padding:"3px 8px"}}><span className="spin">↻</span> 저장중</span>;
+  return <span style={{fontSize:10,color:"#afffaf",background:"rgba(0,0,0,.2)",borderRadius:20,padding:"3px 8px"}}>✓ 저장됨</span>;
+}
+
+function PwChangeModal({adminPw,setAdminPw,onClose}) {
+  const [cur,setCur]=useState(""); const [n1,setN1]=useState(""); const [n2,setN2]=useState("");
+  const save=()=>{
+    if(cur!==adminPw){alert("현재 비밀번호가 틀렸어요.");return;}
+    if(!n1||n1!==n2){alert("새 비밀번호가 일치하지 않아요.");return;}
+    localStorage.setItem("art_admin_pw",n1); setAdminPw(n1); onClose();
+  };
+  return (
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.5)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center"}}>
+      <div style={{background:"#fff",borderRadius:14,padding:28,width:320}}>
+        <div style={{fontWeight:700,fontSize:16,marginBottom:18}}>🔑 비밀번호 변경</div>
+        {[["현재 비밀번호",cur,setCur],["새 비밀번호",n1,setN1],["새 비밀번호 확인",n2,setN2]].map(([label,val,set])=>(
+          <div key={label} style={{marginBottom:12}}>
+            <div style={{fontSize:12,color:"#666",marginBottom:4}}>{label}</div>
+            <input type="password" value={val} onChange={e=>set(e.target.value)}
+              style={{width:"100%",border:"1.5px solid #e0e0e0",borderRadius:7,padding:"9px 12px",fontSize:14}}/>
+          </div>
+        ))}
+        <div style={{display:"flex",gap:8,marginTop:8}}>
+          <button onClick={onClose} style={{flex:1,background:"#f0f0f0",border:"none",borderRadius:8,padding:11,cursor:"pointer"}}>취소</button>
+          <button onClick={save} style={{flex:1,background:"#2d6a9f",color:"#fff",border:"none",borderRadius:8,padding:11,cursor:"pointer",fontWeight:700}}>변경</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LoginPage({onLogin,adminPw}) {
+  const [pw,setPw]=useState(""); const [err,setErr]=useState(false);
+  const try_=()=>{
+    if(pw===adminPw){onLogin(true);}
+    else if(pw==="view"){onLogin(false);}
+    else{setErr(true);setTimeout(()=>setErr(false),2000);}
+  };
+  return (
+    <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#1a3a5c,#2d6a9f)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+      <div style={{background:"#fff",borderRadius:16,padding:40,width:320,boxShadow:"0 8px 32px rgba(0,0,0,.2)"}}>
+        <div style={{textAlign:"center",marginBottom:28}}>
+          <div style={{fontSize:28,marginBottom:8}}>🎨</div>
+          <div style={{fontWeight:700,fontSize:16,color:"#1a3a5c"}}>한국미술협회 부여지부</div>
+          <div style={{fontSize:12,color:"#888",marginTop:4}}>관리시스템</div>
+        </div>
+        <input type="password" value={pw} onChange={e=>{setPw(e.target.value);setErr(false);}}
+          onKeyDown={e=>e.key==="Enter"&&try_()} placeholder="비밀번호 입력"
+          style={{width:"100%",border:err?"2px solid #e74c3c":"1.5px solid #e0e0e0",borderRadius:8,padding:"11px 14px",fontSize:15,marginBottom:12,outline:"none"}}/>
+        {err&&<div style={{color:"#e74c3c",fontSize:12,marginBottom:8,textAlign:"center"}}>비밀번호가 틀렸습니다</div>}
+        <button onClick={try_} style={{width:"100%",background:"linear-gradient(135deg,#1a3a5c,#2d6a9f)",color:"#fff",border:"none",borderRadius:8,padding:12,fontSize:15,fontWeight:700,cursor:"pointer"}}>로그인</button>
+        <div style={{textAlign:"center",fontSize:11,color:"#aaa",marginTop:12}}>열람 전용: view 입력</div>
+      </div>
+    </div>
+  );
+}
+
+function NoticeBanner({notice,setNotice,isAdmin}) {
+  const [editing,setEditing]=useState(false);
+  const [draft,setDraft]=useState("");
+  if(editing) return (
+    <div style={{background:"linear-gradient(135deg,#fff8e1,#fff3cd)",border:"2px solid #f39c12",borderRadius:12,padding:14,marginBottom:16}}>
+      <div style={{fontSize:12,fontWeight:700,color:"#e67e22",marginBottom:8}}>📢 공지 편집</div>
+      <textarea value={draft} onChange={e=>setDraft(e.target.value)} rows={3}
+        style={{width:"100%",border:"1.5px solid #f39c12",borderRadius:8,padding:"8px 12px",fontSize:14,resize:"vertical",fontFamily:"inherit"}}/>
+      <div style={{display:"flex",gap:8,marginTop:8}}>
+        <button onClick={()=>{if(setNotice)setNotice(draft);setEditing(false);}} style={{background:"#f39c12",color:"#fff",border:"none",borderRadius:8,padding:"7px 16px",cursor:"pointer",fontWeight:700,fontSize:13}}>저장</button>
+        <button onClick={()=>setEditing(false)} style={{background:"#f0f0f0",border:"none",borderRadius:8,padding:"7px 12px",cursor:"pointer",fontSize:13}}>취소</button>
+      </div>
+    </div>
+  );
+  if(!notice&&!isAdmin) return null;
+  return (
+    <div style={{background:"linear-gradient(135deg,#fff8e1,#fff3cd)",border:"2px solid #f39c12",borderRadius:12,padding:"12px 16px",marginBottom:16,display:"flex",alignItems:"flex-start",gap:10}}>
+      <span style={{fontSize:20,flexShrink:0}}>📢</span>
+      <div style={{flex:1}}>
+        <div style={{fontSize:11,fontWeight:700,color:"#e67e22",marginBottom:4}}>공 지</div>
+        <div style={{fontSize:14,color:"#333",whiteSpace:"pre-wrap",lineHeight:1.6}}>{notice||"공지사항을 입력하세요."}</div>
+      </div>
+      {isAdmin&&<button onClick={()=>{setDraft(notice||"");setEditing(true);}} style={{background:"#f39c12",color:"#fff",border:"none",borderRadius:8,padding:"5px 12px",cursor:"pointer",fontSize:12,fontWeight:600,flexShrink:0}}>✏️ 수정</button>}
+    </div>
+  );
+}
+
+function IntroPage({intro,setIntro,isAdmin}) {
+  const [tab,setTab]=useState("greeting");
+  const [editGreeting,setEditGreeting]=useState(false);
+  const [editStatute,setEditStatute]=useState(false);
+  const [editChair,setEditChair]=useState(false);
+  const [greetingDraft,setGreetingDraft]=useState("");
+  const [statuteDraft,setStatuteDraft]=useState("");
+  const [chairDraft,setChairDraft]=useState({name:"",position:""});
+  const [uploading,setUploading]=useState(false);
+  const save=(key,val)=>{ if(setIntro) setIntro({...intro,[key]:val}); };
+  const saveMulti=(obj)=>{ if(setIntro) setIntro({...intro,...obj}); };
+
+  const uploadOrgImg=(e)=>{
+    const file=e.target.files[0]; if(!file) return;
+    if(!window._fbOk||!window._st){alert("Storage 미연결");return;}
+    setUploading(true);
+    const sRef=window._st.ref("orgchart/orgchart.jpg");
+    sRef.put(file).then(()=>sRef.getDownloadURL()).then(url=>{
+      save("orgImgUrl",url); setUploading(false);
+    }).catch(()=>{setUploading(false);alert("업로드 실패");});
+  };
+
+  const tabs=[{key:"greeting",label:"회장 인사말"},{key:"statute",label:"정관"},{key:"orgchart",label:"조직도"}];
+  return (
+    <div style={{maxWidth:800,margin:"0 auto"}}>
+      <div style={{background:"linear-gradient(135deg,#1a3a5c,#2d6a9f)",borderRadius:14,padding:"20px 24px",marginBottom:20,color:"#fff"}}>
+        <div style={{fontSize:22,fontWeight:700}}>🎨 협회 소개</div>
+        <div style={{fontSize:13,opacity:.8,marginTop:4}}>한국미술협회 부여지부</div>
+      </div>
+      <div style={{display:"flex",gap:8,marginBottom:16}}>
+        {tabs.map(t=>(
+          <button key={t.key} onClick={()=>setTab(t.key)}
+            style={{padding:"8px 20px",borderRadius:20,border:"none",cursor:"pointer",fontWeight:tab===t.key?700:400,
+              background:tab===t.key?"#2d6a9f":"#fff",color:tab===t.key?"#fff":"#555",fontSize:13,
+              boxShadow:tab===t.key?"0 2px 8px rgba(45,106,159,.3)":"0 1px 3px rgba(0,0,0,.1)"}}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+      {tab==="greeting"&&(
+        <div style={{background:"#fff",borderRadius:14,padding:24,boxShadow:"0 2px 12px rgba(0,0,0,.08)"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+            <div style={{fontWeight:700,fontSize:16,color:"#1a3a5c"}}>👑 회장 인사말</div>
+            {isAdmin&&!editGreeting&&<button onClick={()=>{setGreetingDraft(intro.greeting||"");setEditGreeting(true);}}
+              style={{background:"#e8f0fe",color:"#2d6a9f",border:"none",borderRadius:8,padding:"6px 14px",cursor:"pointer",fontSize:12,fontWeight:600}}>✏️ 수정</button>}
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:20,padding:16,background:"#f8f9fa",borderRadius:12}}>
+            <div style={{width:60,height:60,borderRadius:"50%",background:"linear-gradient(135deg,#2d6a9f,#4a90c4)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>👤</div>
+            <div style={{flex:1}}>
+              {editChair?(
+                <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+                  <input value={chairDraft.name} onChange={e=>setChairDraft(d=>({...d,name:e.target.value}))} placeholder="회장 이름"
+                    style={{border:"1.5px solid #e0e0e0",borderRadius:7,padding:"6px 10px",fontSize:13,width:100}}/>
+                  <input value={chairDraft.position} onChange={e=>setChairDraft(d=>({...d,position:e.target.value}))} placeholder="직위"
+                    style={{border:"1.5px solid #e0e0e0",borderRadius:7,padding:"6px 10px",fontSize:13,width:150}}/>
+                  <button onClick={()=>{saveMulti({chairName:chairDraft.name,chairPosition:chairDraft.position});setEditChair(false);}}
+                    style={{background:"#2d6a9f",color:"#fff",border:"none",borderRadius:7,padding:"6px 14px",cursor:"pointer",fontSize:12,fontWeight:700}}>저장</button>
+                  <button onClick={()=>setEditChair(false)} style={{background:"#f0f0f0",border:"none",borderRadius:7,padding:"6px 10px",cursor:"pointer",fontSize:12}}>취소</button>
+                </div>
+              ):(
+                <div>
+                  <div style={{fontWeight:700,fontSize:16}}>{intro.chairName||"(회장 이름)"}</div>
+                  <div style={{fontSize:13,color:"#666",marginTop:2}}>{intro.chairPosition||"한국미술협회 부여지부장"}</div>
+                  {isAdmin&&<button onClick={()=>{setChairDraft({name:intro.chairName||"",position:intro.chairPosition||""});setEditChair(true);}}
+                    style={{background:"none",border:"none",color:"#2d6a9f",cursor:"pointer",fontSize:11,marginTop:4,padding:0,textDecoration:"underline"}}>✏️ 이름/직위 수정</button>}
+                </div>
+              )}
+            </div>
+          </div>
+          {editGreeting?(
+            <div>
+              <textarea value={greetingDraft} onChange={e=>setGreetingDraft(e.target.value)} rows={10}
+                style={{width:"100%",border:"1.5px solid #2d6a9f",borderRadius:8,padding:"10px 14px",fontSize:14,resize:"vertical",lineHeight:1.8}}/>
+              <div style={{display:"flex",gap:8,marginTop:10}}>
+                <button onClick={()=>{save("greeting",greetingDraft);setEditGreeting(false);}}
+                  style={{background:"#2d6a9f",color:"#fff",border:"none",borderRadius:8,padding:"9px 20px",cursor:"pointer",fontWeight:700}}>저장</button>
+                <button onClick={()=>setEditGreeting(false)} style={{background:"#f0f0f0",border:"none",borderRadius:8,padding:"9px 14px",cursor:"pointer"}}>취소</button>
+              </div>
+            </div>
+          ):(
+            <div style={{fontSize:14,lineHeight:2,color:"#333",whiteSpace:"pre-wrap",minHeight:100}}>{intro.greeting||"회장 인사말을 입력해주세요."}</div>
+          )}
+        </div>
+      )}
+      {tab==="statute"&&(
+        <div style={{background:"#fff",borderRadius:14,padding:24,boxShadow:"0 2px 12px rgba(0,0,0,.08)"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+            <div style={{fontWeight:700,fontSize:16,color:"#1a3a5c"}}>📜 협회 정관</div>
+            {isAdmin&&!editStatute&&<button onClick={()=>{setStatuteDraft(intro.statute||"");setEditStatute(true);}}
+              style={{background:"#e8f0fe",color:"#2d6a9f",border:"none",borderRadius:8,padding:"6px 14px",cursor:"pointer",fontSize:12,fontWeight:600}}>✏️ 수정</button>}
+          </div>
+          {editStatute?(
+            <div>
+              <textarea value={statuteDraft} onChange={e=>setStatuteDraft(e.target.value)} rows={20}
+                style={{width:"100%",border:"1.5px solid #2d6a9f",borderRadius:8,padding:"10px 14px",fontSize:13,resize:"vertical",lineHeight:1.8,fontFamily:"inherit"}}/>
+              <div style={{display:"flex",gap:8,marginTop:10}}>
+                <button onClick={()=>{save("statute",statuteDraft);setEditStatute(false);}}
+                  style={{background:"#2d6a9f",color:"#fff",border:"none",borderRadius:8,padding:"9px 20px",cursor:"pointer",fontWeight:700}}>저장</button>
+                <button onClick={()=>setEditStatute(false)} style={{background:"#f0f0f0",border:"none",borderRadius:8,padding:"9px 14px",cursor:"pointer"}}>취소</button>
+              </div>
+            </div>
+          ):(
+            <div style={{fontSize:13,lineHeight:2,color:"#333",whiteSpace:"pre-wrap",minHeight:200}}>{intro.statute||"정관 내용을 입력해주세요."}</div>
+          )}
+        </div>
+      )}
+      {tab==="orgchart"&&(
+        <div style={{background:"#fff",borderRadius:14,padding:24,boxShadow:"0 2px 12px rgba(0,0,0,.08)"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+            <div style={{fontWeight:700,fontSize:16,color:"#1a3a5c"}}>🗂️ 조직도</div>
+            {isAdmin&&(
+              <label style={{background:"#e8f0fe",color:"#2d6a9f",border:"none",borderRadius:8,padding:"6px 14px",cursor:"pointer",fontSize:12,fontWeight:600}}>
+                {uploading?"업로드중...":"📷 사진 업로드"}
+                <input type="file" accept="image/*" onChange={uploadOrgImg} style={{display:"none"}} disabled={uploading}/>
+              </label>
+            )}
+          </div>
+          {intro.orgImgUrl?(
+            <img src={intro.orgImgUrl} alt="조직도" style={{width:"100%",borderRadius:10,border:"1px solid #e0e0e0"}}/>
+          ):(
+            <div style={{textAlign:"center",padding:"60px 20px",color:"#aaa",background:"#f9f9f9",borderRadius:10,border:"2px dashed #e0e0e0"}}>
+              <div style={{fontSize:40,marginBottom:12}}>🗂️</div>
+              <div style={{fontSize:14}}>조직도 이미지를 업로드해주세요</div>
+              <div style={{fontSize:12,marginTop:4,color:"#bbb"}}>관리자가 사진 업로드 버튼으로 등록할 수 있어요</div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function HomePage({members,transactions,meetings,recoveryTotal,recoveryTarget,recoveryPct,projects,setPage,setSelectedProject,isAdmin,schedules,setSchedules,notice,setNotice}) {
+  const latestBalance=transactions.length>0?transactions[transactions.length-1].balance:0;
+  const recentMeetings=[...meetings].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,3);
+  return (
+    <div>
+      <NoticeBanner notice={notice} setNotice={setNotice} isAdmin={isAdmin}/>
+      <CalendarWidget schedules={schedules} setSchedules={setSchedules} isAdmin={isAdmin}/>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:12,marginBottom:20}}>
+        {[
+          {label:"전체 회원",value:members.length+"명",icon:"👥",color:"#2d6a9f",bg:"#e8f0fe"},
+          {label:"현재 잔액",value:(latestBalance||0).toLocaleString()+"원",icon:"🏦",color:"#27ae60",bg:"#e8f5e9"},
+          {label:"회의 기록",value:meetings.length+"건",icon:"📋",color:"#8e44ad",bg:"#f3e0ff"},
+          {label:"목표 달성률",value:recoveryPct+"%",icon:"📊",color:"#e67e22",bg:"#fff3e0"},
+        ].map((c,i)=>(
+          <div key={i} style={{background:c.bg,borderRadius:12,padding:"16px 20px",display:"flex",alignItems:"center",gap:12}}>
+            <span style={{fontSize:28}}>{c.icon}</span>
+            <div>
+              <div style={{fontSize:11,color:"#888"}}>{c.label}</div>
+              <div style={{fontSize:18,fontWeight:700,color:c.color}}>{c.value}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div style={{background:"#fff",borderRadius:14,padding:"16px 20px",boxShadow:"0 2px 8px rgba(0,0,0,.06)"}}>
+        <div style={{fontWeight:700,fontSize:14,marginBottom:12,color:"#1a3a5c"}}>📋 최근 회의록</div>
+        {recentMeetings.length===0&&<div style={{color:"#aaa",fontSize:13,textAlign:"center",padding:20}}>회의록이 없습니다</div>}
+        {recentMeetings.map(m=>(
+          <div key={m.id} style={{display:"flex",gap:12,padding:"10px 0",borderBottom:"1px solid #f5f5f5",alignItems:"flex-start"}}>
+            <span style={{fontSize:18}}>{m.type==="정기총회"?"🏛️":m.type==="임시총회"?"⚡":"📝"}</span>
+            <div>
+              <div style={{fontWeight:600,fontSize:13}}>{m.type} <span style={{color:"#888",fontWeight:400}}>— {m.date}</span></div>
+              <div style={{fontSize:12,color:"#666",marginTop:2}}>{m.venue} · 참석 {m.attendCount}명</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── 달력 위젯 ──
+function CalendarWidget({schedules, setSchedules, isAdmin}) {
+  const today = new Date();
+  const [viewYear,  setViewYear]  = useState(today.getFullYear());
+  const [viewMonth, setViewMonth] = useState(today.getMonth()); // 0-based
+  const [showForm,  setShowForm]  = useState(false);
+  const [editItem,  setEditItem]  = useState(null);
+  const [selDate,   setSelDate]   = useState(null);
+  const [form, setForm] = useState({title:"",date:"",endDate:"",color:"#2d6a9f",memo:""});
+  const COLORS = ["#2d6a9f","#27ae60","#e74c3c","#e67e22","#8e44ad","#16a085","#c0392b","#d35400"];
+  const CAT_COLORS = {
+    "파랑":"#2d6a9f","초록":"#27ae60","빨강":"#e74c3c","주황":"#e67e22",
+    "보라":"#8e44ad","청록":"#16a085"
+  };
+
+  const daysInMonth = new Date(viewYear, viewMonth+1, 0).getDate();
+  const firstDay    = new Date(viewYear, viewMonth, 1).getDay(); // 0=일
+  const todayStr    = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
+
+  const getDateStr = (y,m,d) => `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+
+  const schedulesOnDate = (dateStr) =>
+    (schedules||[]).filter(s => {
+      if(!s.endDate || s.endDate===s.date) return s.date===dateStr;
+      return dateStr>=s.date && dateStr<=s.endDate;
+    });
+
+  const openAdd = (dateStr) => {
+    if(!isAdmin) return;
+    setEditItem(null);
+    setForm({title:"",date:dateStr,endDate:"",color:"#2d6a9f",memo:""});
+    setShowForm(true);
+  };
+  const openEdit = (s,e) => {
+    e.stopPropagation();
+    if(!isAdmin) return;
+    setEditItem(s.id);
+    setForm({title:s.title,date:s.date,endDate:s.endDate||"",color:s.color||"#2d6a9f",memo:s.memo||""});
+    setShowForm(true);
+  };
+  const saveSchedule = () => {
+    if(!form.title.trim()||!form.date) return;
+    if(editItem) {
+      if(setSchedules) setSchedules((schedules||[]).map(s=>s.id===editItem?{...s,...form}:s));
+    } else {
+      if(setSchedules) setSchedules([...(schedules||[]),{...form,id:Date.now()}]);
+    }
+    setShowForm(false);
+  };
+  const deleteSchedule = (id,e) => {
+    e.stopPropagation();
+    if(!isAdmin) return;
+    if(setSchedules) setSchedules((schedules||[]).filter(s=>s.id!==id));
+  };
+
+  const prevMonth = () => { if(viewMonth===0){setViewMonth(11);setViewYear(y=>y-1);}else{setViewMonth(m=>m-1);} };
+  const nextMonth = () => { if(viewMonth===11){setViewMonth(0);setViewYear(y=>y+1);}else{setViewMonth(m=>m+1);} };
+  const MONTH_KO = ["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"];
+  const DAY_KO   = ["일","월","화","수","목","금","토"];
+
+  // 이번달 일정 목록 (날짜순)
+  const monthStr = `${viewYear}-${String(viewMonth+1).padStart(2,"0")}`;
+  const monthSchedules = (schedules||[])
+    .filter(s=>s.date.startsWith(monthStr)||(s.endDate&&s.endDate>=monthStr+"-01"&&s.date<=monthStr+"-31"))
+    .sort((a,b)=>a.date.localeCompare(b.date));
+
+  return (
+    <div style={{background:"#fff",borderRadius:12,padding:20,boxShadow:"0 2px 8px rgba(0,0,0,.06)"}}>
+      {/* 모달 */}
+      {showForm&&(
+        <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,.5)",zIndex:3000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}
+          onClick={e=>{if(e.target===e.currentTarget)setShowForm(false);}}>
+          <div style={{background:"#fff",borderRadius:14,padding:24,width:"100%",maxWidth:380,boxShadow:"0 8px 32px rgba(0,0,0,.2)"}}>
+            <div style={{fontWeight:700,fontSize:16,marginBottom:16,color:"#2d6a9f"}}>{editItem?"✏️ 일정 수정":"➕ 일정 추가"}</div>
+            <div style={{marginBottom:10}}>
+              <label style={{fontSize:11,color:"#888",fontWeight:600,display:"block",marginBottom:3}}>일정 제목 *</label>
+              <input value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))}
+                placeholder="예) 임원회의, 전시회 준비"
+                style={{width:"100%",border:"1.5px solid #e0e0e0",borderRadius:7,padding:"9px 12px",fontSize:14,boxSizing:"border-box"}}
+                autoFocus/>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
+              <div>
+                <label style={{fontSize:11,color:"#888",fontWeight:600,display:"block",marginBottom:3}}>시작일 *</label>
+                <input type="date" value={form.date} onChange={e=>setForm(f=>({...f,date:e.target.value}))}
+                  style={{width:"100%",border:"1.5px solid #e0e0e0",borderRadius:7,padding:"8px 10px",fontSize:13,boxSizing:"border-box"}}/>
+              </div>
+              <div>
+                <label style={{fontSize:11,color:"#888",fontWeight:600,display:"block",marginBottom:3}}>종료일 (생략가능)</label>
+                <input type="date" value={form.endDate} onChange={e=>setForm(f=>({...f,endDate:e.target.value}))}
+                  style={{width:"100%",border:"1.5px solid #e0e0e0",borderRadius:7,padding:"8px 10px",fontSize:13,boxSizing:"border-box"}}/>
+              </div>
+            </div>
+            <div style={{marginBottom:10}}>
+              <label style={{fontSize:11,color:"#888",fontWeight:600,display:"block",marginBottom:6}}>색상</label>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                {COLORS.map(c=>(
+                  <div key={c} onClick={()=>setForm(f=>({...f,color:c}))}
+                    style={{width:26,height:26,borderRadius:"50%",background:c,cursor:"pointer",
+                      border:form.color===c?"3px solid #333":"3px solid transparent",boxSizing:"border-box"}}/>
+                ))}
+              </div>
+            </div>
+            <div style={{marginBottom:16}}>
+              <label style={{fontSize:11,color:"#888",fontWeight:600,display:"block",marginBottom:3}}>메모 (선택)</label>
+              <textarea value={form.memo} onChange={e=>setForm(f=>({...f,memo:e.target.value}))}
+                placeholder="장소, 준비사항 등"
+                rows={2} style={{width:"100%",border:"1.5px solid #e0e0e0",borderRadius:7,padding:"8px 12px",fontSize:13,resize:"none",boxSizing:"border-box"}}/>
+            </div>
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={saveSchedule} style={{flex:1,background:"#2d6a9f",color:"#fff",border:"none",borderRadius:8,padding:"11px",cursor:"pointer",fontWeight:700,fontSize:14}}>💾 저장</button>
+              {editItem&&<button onClick={()=>{if(setSchedules)setSchedules((schedules||[]).filter(s=>s.id!==editItem));setShowForm(false);}}
+                style={{background:"#fde8e8",color:"#c0392b",border:"none",borderRadius:8,padding:"11px 14px",cursor:"pointer",fontWeight:700}}>🗑️</button>}
+              <button onClick={()=>setShowForm(false)} style={{background:"#f0f0f0",border:"none",borderRadius:8,padding:"11px 16px",cursor:"pointer"}}>취소</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 헤더 */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+        <div style={{display:"flex",alignItems:"center",gap:12}}>
+          <div style={{fontWeight:700,fontSize:16}}>📅 협회 일정</div>
+          <div style={{display:"flex",alignItems:"center",gap:6}}>
+            <button onClick={prevMonth} style={{background:"#f0f0f0",border:"none",borderRadius:6,width:28,height:28,cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center"}}>‹</button>
+            <span style={{fontWeight:700,fontSize:15,minWidth:80,textAlign:"center"}}>{viewYear}년 {MONTH_KO[viewMonth]}</span>
+            <button onClick={nextMonth} style={{background:"#f0f0f0",border:"none",borderRadius:6,width:28,height:28,cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center"}}>›</button>
+            <button onClick={()=>{setViewYear(today.getFullYear());setViewMonth(today.getMonth());}}
+              style={{background:"#e8f0fe",color:"#2d6a9f",border:"none",borderRadius:6,padding:"4px 10px",fontSize:11,cursor:"pointer",fontWeight:600,marginLeft:4}}>오늘</button>
+          </div>
+        </div>
+        {isAdmin&&<button onClick={()=>openAdd(todayStr)}
+          style={{background:"#2d6a9f",color:"#fff",border:"none",borderRadius:7,padding:"6px 14px",cursor:"pointer",fontSize:12,fontWeight:700}}>+ 일정 추가</button>}
+      </div>
+
+      {/* 달력 그리드 */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:1,background:"#f0f0f0",borderRadius:8,overflow:"hidden",marginBottom:16}}>
+        {DAY_KO.map((d,i)=>(
+          <div key={d} style={{background:i===0?"#fff5f5":i===6?"#f0f5ff":"#f8f9fa",padding:"6px 0",textAlign:"center",
+            fontSize:11,fontWeight:700,color:i===0?"#e74c3c":i===6?"#2d6a9f":"#555"}}>{d}</div>
+        ))}
+        {Array.from({length:firstDay}).map((_,i)=>(
+          <div key={"e"+i} style={{background:"#fafafa",minHeight:72}}/>
+        ))}
+        {Array.from({length:daysInMonth}).map((_,i)=>{
+          const d=i+1;
+          const dateStr=getDateStr(viewYear,viewMonth,d);
+          const dayOfWeek=new Date(viewYear,viewMonth,d).getDay();
+          const isToday=dateStr===todayStr;
+          const dayScheds=schedulesOnDate(dateStr);
+          return(
+            <div key={d} onClick={()=>isAdmin&&openAdd(dateStr)}
+              style={{background:"#fff",minHeight:72,padding:"4px",cursor:isAdmin?"pointer":"default",
+                borderTop:isToday?"3px solid #2d6a9f":"3px solid transparent",
+                transition:"background .1s"}}
+              onMouseEnter={e=>{if(isAdmin)e.currentTarget.style.background="#f0f7ff";}}
+              onMouseLeave={e=>{e.currentTarget.style.background="#fff";}}>
+              <div style={{fontSize:12,fontWeight:isToday?700:400,
+                color:isToday?"#2d6a9f":dayOfWeek===0?"#e74c3c":dayOfWeek===6?"#4a7fd4":"#333",
+                marginBottom:2,
+                background:isToday?"#2d6a9f":"transparent",
+                color:isToday?"#fff":dayOfWeek===0?"#e74c3c":dayOfWeek===6?"#4a7fd4":"#333",
+                borderRadius:isToday?"50%":"0",width:isToday?20:undefined,height:isToday?20:undefined,
+                display:"flex",alignItems:"center",justifyContent:isToday?"center":"flex-start",
+                paddingLeft:isToday?0:2
+              }}>{d}</div>
+              {dayScheds.slice(0,2).map(s=>(
+                <div key={s.id} onClick={e=>openEdit(s,e)}
+                  style={{background:s.color||"#2d6a9f",color:"#fff",borderRadius:3,padding:"1px 4px",
+                    fontSize:10,marginBottom:1,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis",
+                    cursor:"pointer",lineHeight:1.5}}>
+                  {s.title}
+                </div>
+              ))}
+              {dayScheds.length>2&&<div style={{fontSize:9,color:"#888",paddingLeft:2}}>+{dayScheds.length-2}개</div>}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 이번달 일정 목록 */}
+      {monthSchedules.length>0&&(
+        <div>
+          <div style={{fontWeight:600,fontSize:12,color:"#888",marginBottom:8}}>📋 {viewYear}년 {MONTH_KO[viewMonth]} 일정 목록</div>
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            {monthSchedules.map(s=>(
+              <div key={s.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",
+                borderRadius:8,background:"#f8f9fa",border:`2px solid ${s.color||"#2d6a9f"}22`}}>
+                <div style={{width:10,height:10,borderRadius:"50%",background:s.color||"#2d6a9f",flexShrink:0}}/>
+                <div style={{flex:1}}>
+                  <div style={{fontWeight:600,fontSize:13,color:"#222"}}>{s.title}</div>
+                  <div style={{fontSize:11,color:"#888"}}>{s.date}{s.endDate&&s.endDate!==s.date?` ~ ${s.endDate}`:""}{s.memo&&` · ${s.memo}`}</div>
+                </div>
+                {isAdmin&&(
+                  <div style={{display:"flex",gap:4}}>
+                    <button onClick={e=>openEdit(s,e)} style={{background:"#e8f0fe",color:"#2d6a9f",border:"none",borderRadius:5,padding:"3px 8px",cursor:"pointer",fontSize:11}}>✏️</button>
+                    <button onClick={e=>deleteSchedule(s.id,e)} style={{background:"#fde8e8",color:"#c0392b",border:"none",borderRadius:5,padding:"3px 8px",cursor:"pointer",fontSize:11}}>🗑️</button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      {monthSchedules.length===0&&(
+        <div style={{textAlign:"center",padding:"16px",color:"#bbb",fontSize:13}}>
+          {isAdmin?"날짜를 클릭해서 일정을 추가하세요":"이번 달 등록된 일정이 없습니다"}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── 홈 ──
+
+function MemberModal({editing, form, setForm, onSave, onClose, photoUploading, onPhotoChange}) {
+  const fields = ["한국화","서양화","서예","공예","수채화","기타"];
+  const [showAddrSearch,setShowAddrSearch]=useState(false);
+  const [addrQuery,setAddrQuery]=useState("");
+  const [addrResults,setAddrResults]=useState([]);
+  const [addrLoading,setAddrLoading]=useState(false);
+  const searchAddr=async()=>{
+    if(!addrQuery.trim()) return;
+    setAddrLoading(true);
+    setAddrResults([]);
+    try {
+      // 행정안전부 도로명주소 API (인증키 불필요 - 공개 테스트키)
+      const key="devU01TX0FVVEgyMDI1MDcwMzE3MTIwMTExNTY4NjQ=";
+      const url=`https://business.juso.go.kr/addrlink/addrLinkApi.do?confmKey=${key}&currentPage=1&countPerPage=10&keyword=${encodeURIComponent(addrQuery)}&resultType=json`;
+      const res=await fetch(url);
+      const json=await res.json();
+      const list=json?.results?.juso||[];
+      setAddrResults(list);
+      if(list.length===0) setAddrResults([{roadAddr:"검색 결과 없음",zipNo:"",jibunAddr:""}]);
+    } catch(e) {
+      setAddrResults([{roadAddr:"검색 실패: "+e.message,zipNo:"",jibunAddr:""}]);
+    }
+    setAddrLoading(false);
+  };
+  const selectAddr=(item)=>{
+    if(!item.zipNo) return;
+    setForm(f=>({...f,zip:item.zipNo,address:item.roadAddr||item.jibunAddr}));
+    setShowAddrSearch(false);
+    setAddrQuery("");
+    setAddrResults([]);
+  };
+  return (
+    <div style={{position:"fixed",top:0,left:0,width:"100%",height:"100%",background:"rgba(0,0,0,.5)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16,boxSizing:"border-box"}}
+      onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div style={{background:"#fff",borderRadius:16,padding:24,width:"100%",maxWidth:520,boxShadow:"0 20px 60px rgba(0,0,0,.3)",maxHeight:"92vh",overflowY:"auto"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+          <div style={{fontWeight:700,fontSize:16,color:"#2d6a9f"}}>{editing?"✏️ 회원 수정":"➕ 신규 회원 등록"}</div>
+          <button onClick={onClose} style={{background:"none",border:"none",fontSize:20,cursor:"pointer",color:"#aaa",lineHeight:1}}>✕</button>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:16,padding:12,background:"#f8f9fa",borderRadius:10,border:"1px solid #eee"}}>
+          <div style={{width:68,height:88,borderRadius:6,overflow:"hidden",background:"#e8e8e8",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",border:"2px dashed #ccc"}}>
+            {form.photoUrl?<img src={form.photoUrl} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontSize:26,color:"#bbb"}}>👤</span>}
+          </div>
+          <div>
+            <div style={{fontSize:11,color:"#888",marginBottom:6}}>증명사진 (JPG/PNG)</div>
+            <label style={{background:"#2d6a9f",color:"#fff",borderRadius:6,padding:"6px 14px",cursor:"pointer",fontSize:12,fontWeight:600,display:"inline-block"}}>
+              {photoUploading?"⏳ 업로드 중...":"📷 사진 선택"}
+              <input type="file" accept="image/*" onChange={onPhotoChange} style={{display:"none"}} disabled={photoUploading}/>
+            </label>
+            {form.photoUrl&&<button onClick={()=>setForm(f=>({...f,photoUrl:""}))} style={{marginLeft:8,background:"#fde8e8",color:"#c0392b",border:"none",borderRadius:6,padding:"6px 10px",cursor:"pointer",fontSize:11}}>✕ 삭제</button>}
+          </div>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
+          {[["name","이름"],["phone","연락처"]].map(([k,l])=>(
+            <div key={k}>
+              <label style={{fontSize:11,color:"#888",fontWeight:600,display:"block",marginBottom:3}}>{l}</label>
+              <input value={form[k]||""} onChange={e=>setForm(f=>({...f,[k]:e.target.value}))}
+                style={{width:"100%",border:"1.5px solid #e0e0e0",borderRadius:7,padding:"8px 10px",fontSize:13,boxSizing:"border-box"}}/>
+            </div>
+          ))}
+          <div>
+            <label style={{fontSize:11,color:"#888",fontWeight:600,display:"block",marginBottom:3}}>생년월일</label>
+            <input type="date" value={form.birth||""} onChange={e=>setForm(f=>({...f,birth:e.target.value}))}
+              style={{width:"100%",border:"1.5px solid #e0e0e0",borderRadius:7,padding:"8px 10px",fontSize:13,boxSizing:"border-box"}}/>
+          </div>
+          <div>
+            <label style={{fontSize:11,color:"#888",fontWeight:600,display:"block",marginBottom:3}}>가입일</label>
+            <input type="date" value={form.joined||new Date().toISOString().slice(0,10)} onChange={e=>setForm(f=>({...f,joined:e.target.value}))}
+              style={{width:"100%",border:"1.5px solid #e0e0e0",borderRadius:7,padding:"8px 10px",fontSize:13,boxSizing:"border-box"}}/>
+          </div>
+          <div>
+            <label style={{fontSize:11,color:"#888",fontWeight:600,display:"block",marginBottom:3}}>성별</label>
+            <select value={form.gender||"여"} onChange={e=>setForm(f=>({...f,gender:e.target.value}))}
+              style={{width:"100%",border:"1.5px solid #e0e0e0",borderRadius:7,padding:"8px 10px",fontSize:13}}>
+              <option>여</option><option>남</option>
+            </select>
+          </div>
+          <div>
+            <label style={{fontSize:11,color:"#888",fontWeight:600,display:"block",marginBottom:3}}>분야</label>
+            <select value={form.field||"한국화"} onChange={e=>setForm(f=>({...f,field:e.target.value}))}
+              style={{width:"100%",border:"1.5px solid #e0e0e0",borderRadius:7,padding:"8px 10px",fontSize:13}}>
+              {fields.map(f=><option key={f}>{f}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={{fontSize:11,color:"#888",fontWeight:600,display:"block",marginBottom:3}}>직위</label>
+            <input value={form.position||""} onChange={e=>setForm(f=>({...f,position:e.target.value}))}
+              style={{width:"100%",border:"1.5px solid #e0e0e0",borderRadius:7,padding:"8px 10px",fontSize:13,boxSizing:"border-box"}}/>
+          </div>
+        </div>
+        <div style={{marginBottom:10}}>
+          <label style={{fontSize:11,color:"#888",fontWeight:600,display:"block",marginBottom:4}}>우편번호 / 주소</label>
+          <div style={{display:"flex",gap:8,marginBottom:6,alignItems:"center"}}>
+            <input value={form.zip||""} onChange={e=>setForm(f=>({...f,zip:e.target.value}))} placeholder="우편번호 5자리"
+              maxLength={5}
+              style={{width:110,border:"1.5px solid #e0e0e0",borderRadius:7,padding:"8px 10px",fontSize:13,boxSizing:"border-box"}}/>
+            <a href="https://www.juso.go.kr/openIndexPage.do" target="_blank"
+              style={{background:"#27ae60",color:"#fff",borderRadius:7,padding:"8px 14px",cursor:"pointer",fontSize:12,fontWeight:700,whiteSpace:"nowrap",textDecoration:"none",display:"inline-block"}}>
+              🔍 우편번호 조회
+            </a>
+          </div>
+          <input value={form.address||""} onChange={e=>setForm(f=>({...f,address:e.target.value}))} placeholder="도로명 주소 직접 입력 (예: 충남 부여군 부여읍 사비로 33)"
+            style={{width:"100%",border:"1.5px solid #e0e0e0",borderRadius:7,padding:"8px 10px",fontSize:13,boxSizing:"border-box",marginBottom:6}}/>
+          <input value={form.address2||""} onChange={e=>setForm(f=>({...f,address2:e.target.value}))} placeholder="상세주소 (동·호수 등)"
+            style={{width:"100%",border:"1.5px solid #e0e0e0",borderRadius:7,padding:"8px 10px",fontSize:13,boxSizing:"border-box"}}/>
+        </div>
+        <div style={{display:"flex",gap:8,marginTop:14}}>
+          <button onClick={onSave} disabled={photoUploading} style={{flex:1,background:"linear-gradient(135deg,#2d6a9f,#4a90c4)",color:"#fff",border:"none",borderRadius:8,padding:"11px",cursor:"pointer",fontWeight:700,fontSize:14,opacity:photoUploading?0.6:1}}>💾 저장</button>
+          <button onClick={onClose} style={{background:"#f0f0f0",border:"none",borderRadius:8,padding:"11px 20px",cursor:"pointer",fontSize:13}}>취소</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+function MembersPage({members,setMembers,fees,setFees,feeYears,isAdmin}) {
+  const [photoUploading,setPhotoUploading]=useState(false);
+  const [search,setSearch]=useState("");
+  const [filterField,setFilterField]=useState("");
+  const [filterGender,setFilterGender]=useState("");
+  const [filterPos,setFilterPos]=useState("");
+  const [editing,setEditing]=useState(null);
+  const [showForm,setShowForm]=useState(false);
+  const [form,setForm]=useState({name:"",gender:"여",zip:"",address:"",phone:"",field:"한국화",position:"",birth:"",joined:"",active:true});
+
+  const [activeTab,setActiveTab]=useState("active");
+  const fields=[...new Set(members.map(m=>m.field).filter(Boolean))].sort();
+  const positions=[...new Set(members.map(m=>m.position).filter(Boolean))].sort();
+  const filtered=members.filter(m=>{
+    const q=search.toLowerCase();
+    const isActive=m.active!==false;
+    return(activeTab==="active"?isActive:!isActive)&&
+           (!q||m.name.includes(q)||(m.address||"").includes(q)||(m.phone||"").includes(q))&&
+           (!filterField||m.field===filterField)&&(!filterGender||m.gender===filterGender)&&(!filterPos||m.position===filterPos);
+  }).sort((a,b)=>a.name.localeCompare(b.name,"ko"));
+
+  const handlePhotoChange=(e)=>{
+    const file=e.target.files[0];
+    if(!file) return;
+    setPhotoUploading(true);
+    const reader=new FileReader();
+    reader.onload=(ev)=>{
+      const img=new Image();
+      img.onload=()=>{
+        // canvas로 증명사진 크기로 리사이즈 (최대 200x260)
+        const maxW=300, maxH=380;
+        let w=img.width, h=img.height;
+        const ratio=Math.min(maxW/w, maxH/h);
+        w=Math.round(w*ratio); h=Math.round(h*ratio);
+        const canvas=document.createElement("canvas");
+        canvas.width=w; canvas.height=h;
+        canvas.getContext("2d").drawImage(img,0,0,w,h);
+        const base64=canvas.toDataURL("image/jpeg",0.82);
+        setForm(f=>({...f,photoUrl:base64}));
+        setPhotoUploading(false);
+      };
+      img.onerror=()=>{alert("이미지를 읽을 수 없습니다.");setPhotoUploading(false);};
+      img.src=ev.target.result;
+    };
+    reader.onerror=()=>{alert("파일 읽기 실패");setPhotoUploading(false);};
+    reader.readAsDataURL(file);
+  };
+
+  const saveForm=()=>{
+    if(!form.name.trim())return;
+    if(editing!==null){
+      // 회원 수정 — 이름이 바뀌면 fees에서도 이름 업데이트
+      const oldMember=members.find(m=>m.id===editing);
+      setMembers(members.map(m=>m.id===editing?{...form,id:editing}:m));
+      if(oldMember&&oldMember.name!==form.name&&fees&&setFees){
+        setFees(fees.map(f=>f.memberId===editing?{...f,name:form.name}:f));
+      }
+      setEditing(null);
+    } else {
+      // 신규 회원 — fees에도 자동으로 행 추가 (모든 연도 0으로)
+      const newId=Date.now();
+      const newMember={...form,id:newId};
+      setMembers([...members,newMember]);
+      if(fees&&setFees&&feeYears){
+        const feeRow={memberId:newId,name:form.name,entry:0,entry_date:""};
+        feeYears.filter(y=>y!=="entry").forEach(y=>{
+          feeRow[y]=0;
+          feeRow[y+"_date"]="";
+        });
+        setFees([...fees,feeRow]);
+      }
+    }
+    setForm({name:"",gender:"여",zip:"",address:"",phone:"",field:"한국화",position:"",birth:"",joined:"",active:true});
+    setShowForm(false);
+  };
+
+  const toggleActive=(id,name,isActive)=>{
+    setMembers(members.map(m=>m.id===id?{...m,active:!isActive}:m));
+  };
+
+  const deleteMember=(id,name)=>{
+    if(!setMembers){alert("🔒 관리자만 삭제할 수 있습니다.");return;}
+    setMembers(members.filter(m=>m.id!==id));
+    if(fees&&setFees) setFees(fees.filter(f=>f.memberId!==id));
+  };
+
+  const downloadMembers=()=>{
+    const header=["번호","이름","성별","분야","직위","우편번호","주소","연락처","생년월일","가입일"];
+    const rows=filtered.map((m,i)=>[i+1,m.name,m.gender,m.field,m.position,m.zip,m.address,m.phone,m.birth,m.joined]);
+    downloadExcel([{name:"회원명단",data:[header,...rows]}],`부여미협_회원명단_${new Date().toISOString().slice(0,10)}.xlsx`);
+  };
+
+  const closeModal=()=>{setShowForm(false);setEditing(null);setForm({name:"",gender:"여",zip:"",address:"",phone:"",field:"한국화",position:"",birth:"",joined:"",active:true,photoUrl:"",address2:""});};
+
+  return (
+    <div>
+      {showForm&&(
+        <MemberModal
+          editing={editing}
+          form={form}
+          setForm={setForm}
+          onSave={saveForm}
+          onClose={closeModal}
+          photoUploading={photoUploading}
+          onPhotoChange={handlePhotoChange}
+        />
+      )}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:8}}>
+        <div style={{display:"flex",alignItems:"center",gap:12}}>
+          <h2 style={{margin:0,fontSize:18,fontWeight:700}}>👥 회원 관리</h2>
+          <div style={{display:"flex",gap:4}}>
+            <button onClick={()=>setActiveTab("active")} style={{border:"none",borderRadius:20,padding:"4px 14px",fontSize:12,fontWeight:600,cursor:"pointer",
+              background:activeTab==="active"?"#2d6a9f":"#f0f0f0",color:activeTab==="active"?"#fff":"#666"}}>
+              활성 {members.filter(m=>m.active!==false).length}명
+            </button>
+            <button onClick={()=>setActiveTab("inactive")} style={{border:"none",borderRadius:20,padding:"4px 14px",fontSize:12,fontWeight:600,cursor:"pointer",
+              background:activeTab==="inactive"?"#e74c3c":"#f0f0f0",color:activeTab==="inactive"?"#fff":"#666"}}>
+              비활성 {members.filter(m=>m.active===false).length}명
+            </button>
+          </div>
+          <span style={{fontSize:13,color:"#888"}}>({filtered.length}명)</span>
+        </div>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+          <ExcelBtn onClick={downloadMembers} label="회원명단 다운로드"/>
+          {isAdmin&&<button onClick={()=>{setEditing(null);setForm({name:"",gender:"여",zip:"",address:"",phone:"",field:"한국화",position:"",birth:"",joined:"",active:true,photoUrl:"",address2:""});setShowForm(true);}} style={{background:"#2d6a9f",color:"#fff",border:"none",borderRadius:8,padding:"8px 16px",cursor:"pointer",fontSize:13,fontWeight:600}}>+ 회원 등록</button>}
+        </div>
+      </div>
+      <div style={{background:"#fff",borderRadius:10,padding:14,marginBottom:14,display:"flex",gap:10,flexWrap:"wrap",boxShadow:"0 1px 4px rgba(0,0,0,.06)"}}>
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="이름·주소·연락처 검색" style={{flex:1,minWidth:160,border:"1px solid #e0e0e0",borderRadius:7,padding:"7px 12px",fontSize:13}}/>
+        <select value={filterField} onChange={e=>setFilterField(e.target.value)} style={{border:"1px solid #e0e0e0",borderRadius:7,padding:"7px 12px",fontSize:13}}>
+          <option value="">전체 분야</option>{fields.map(f=><option key={f}>{f}</option>)}
+        </select>
+        <select value={filterGender} onChange={e=>setFilterGender(e.target.value)} style={{border:"1px solid #e0e0e0",borderRadius:7,padding:"7px 12px",fontSize:13}}>
+          <option value="">전체 성별</option><option value="남">남</option><option value="여">여</option>
+        </select>
+        <select value={filterPos} onChange={e=>setFilterPos(e.target.value)} style={{border:"1px solid #e0e0e0",borderRadius:7,padding:"7px 12px",fontSize:13}}>
+          <option value="">전체 직위</option>{positions.map(p=><option key={p}>{p}</option>)}
+        </select>
+      </div>
+      <div style={{background:"#fff",borderRadius:10,boxShadow:"0 1px 4px rgba(0,0,0,.06)",overflowX:"auto",overflowY:"auto",maxHeight:"calc(100vh - 280px)",scrollbarWidth:"thin"}}>
+        <table style={{borderCollapse:"collapse",fontSize:12.5,whiteSpace:"nowrap",minWidth:"max-content"}}>
+          <thead><tr style={{background:"#f8f9fa",borderBottom:"2px solid #e8e8e8"}}>
+            <th style={{padding:"10px 8px",width:36,minWidth:36,position:"sticky",left:0,zIndex:4,background:"#f8f9fa",textAlign:"center"}}></th>
+            {["이름","성별","분야","직위","연락처","주소","가입일",""].map((h,i)=>(
+              <th key={i} style={{padding:"10px 12px",textAlign:"left",color:"#666",fontWeight:600,whiteSpace:"nowrap",
+                ...(i===0?{position:"sticky",left:36,zIndex:4,background:"#f8f9fa"}:{}),
+                ...(i===7?{position:"sticky",right:0,zIndex:4,background:"#f8f9fa"}:{})}}>{h}</th>
+            ))}
+          </tr></thead>
+          <tbody>{filtered.map((m,i)=>(
+            <tr key={m.id} style={{borderBottom:"1px solid #f5f5f5",background:i%2===0?"#fff":"#fafafa",opacity:m.active===false?0.6:1}}>
+              <td style={{padding:"4px 8px",position:"sticky",left:0,zIndex:1,background:i%2===0?"#fff":"#fafafa",textAlign:"center",width:36,minWidth:36,borderRight:"1px solid #f0f0f0"}}>
+                <button onClick={()=>{const updated=members.map(x=>x.id===m.id?{...x,active:x.active===false?true:false}:x);if(setMembers)setMembers(updated);}}
+                  title={m.active===false?"활성화":"비활성으로 변경"}
+                  style={{width:22,height:22,borderRadius:4,border:m.active===false?"2px solid #ccc":"2px solid #2d6a9f",background:m.active===false?"#f5f5f5":"#2d6a9f",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0,flexShrink:0}}>
+                  {m.active!==false&&<span style={{color:"#fff",fontSize:12,lineHeight:1}}>✓</span>}
+                </button>
+              </td>
+              <td style={{padding:"6px 12px",fontWeight:600,position:"sticky",left:36,zIndex:1,background:i%2===0?"#fff":"#fafafa",minWidth:100,borderRight:"1px solid #e8e8e8",color:m.active===false?"#bbb":"#222",textDecoration:m.active===false?"line-through":"none"}}>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  {m.photoUrl
+                    ?<img src={m.photoUrl} alt="" style={{width:60,height:75,objectFit:"cover",borderRadius:4,border:"1px solid #e0e0e0",flexShrink:0}}/>
+                    :<div style={{width:60,height:75,background:"#f0f0f0",borderRadius:4,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:20,color:"#ccc"}}>👤</div>}
+                  <span style={{fontSize:15,fontWeight:700}}>{m.name}</span>
+                </div>
+              </td>
+              <td style={{padding:"8px 12px",color:m.gender==="남"?"#4f86c6":"#e07b54",minWidth:50}}>{m.gender||"-"}</td>
+              <td style={{padding:"8px 12px",minWidth:80}}>{m.field&&<span style={{background:fieldColors[m.field]+"22",color:fieldColors[m.field],padding:"2px 8px",borderRadius:20,fontSize:11,fontWeight:600}}>{m.field}</span>}</td>
+              <td style={{padding:"8px 12px",color:"#666",minWidth:70}}>{m.position||"-"}</td>
+              <td style={{padding:"8px 12px",color:"#888",minWidth:120}}>{m.phone||"-"}</td>
+              <td style={{padding:"8px 12px",color:"#888",minWidth:200,whiteSpace:"nowrap"}}>{m.address||"-"}</td>
+              <td style={{padding:"8px 12px",color:"#888",whiteSpace:"nowrap",minWidth:100}}>{m.joined||"-"}</td>
+              <td style={{padding:"8px 12px",whiteSpace:"nowrap",position:"sticky",right:0,zIndex:1,background:i%2===0?"#fff":"#fafafa",boxShadow:"-2px 0 4px rgba(0,0,0,.06)"}}>
+                {isAdmin&&<>
+                  <button onClick={()=>{setForm({...m});setEditing(m.id);setShowForm(true);}} style={{background:"#e8f0fe",color:"#2d6a9f",border:"none",borderRadius:5,padding:"3px 8px",cursor:"pointer",marginRight:4,fontSize:11}}>수정</button>
+                  <button onClick={()=>deleteMember(m.id,m.name)} style={{background:"#fde8e8",color:"#c0392b",border:"none",borderRadius:5,padding:"3px 8px",cursor:"pointer",fontSize:11}}>삭제</button>
+                </>}
+              </td>
+            </tr>
+          ))}</tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ── 회비납부 ──
+// ── 회비납부 수정 모달 (FeesPage 외부 컴포넌트로 분리 → 리렌더 버그 방지) ──
+
+function FeeEditModal({member, data, setData, yearOnlyKeys, yearLabels, feeAmounts, onSave, onClose, feePresets, setFeePresets}) {
+  const curYearKey="y"+new Date().getFullYear();
+  const [showPresetEdit,setShowPresetEdit]=useState(false);
+  const [presetInput,setPresetInput]=useState("");
+  if(!member) return null;
+  const presets=feePresets&&feePresets.length>0?feePresets:[50000,100000,150000,200000];
+  const addPreset=()=>{
+    const v=parseInt(presetInput.replace(/,/g,""));
+    if(!v||v<=0)return;
+    if(setFeePresets)setFeePresets([...presets,v].sort((a,b)=>a-b));
+    setPresetInput("");
+  };
+  const removePreset=(v)=>{
+    if(setFeePresets)setFeePresets(presets.filter(p=>p!==v));
+  };
+  return (
+    <div style={{position:"fixed",top:0,left:0,width:"100%",height:"100%",background:"rgba(0,0,0,.55)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:16,boxSizing:"border-box"}}
+      onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div style={{background:"#fff",borderRadius:16,padding:24,width:"100%",maxWidth:480,boxShadow:"0 20px 60px rgba(0,0,0,.35)",maxHeight:"90vh",overflowY:"auto"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
+          <div style={{fontWeight:700,fontSize:16,color:"#2d6a9f"}}>💰 {member.name} 회비 수정</div>
+          <button onClick={onClose} style={{background:"none",border:"none",fontSize:22,cursor:"pointer",color:"#aaa",lineHeight:1}}>✕</button>
+        </div>
+        {/* 연도별 회비 */}
+        <div style={{background:"#f0f7ff",borderRadius:10,padding:14,border:"1px solid #c8d8f0"}}>
+          <div style={{fontWeight:700,color:"#2d6a9f",marginBottom:10,fontSize:13}}>📅 연도별 회비</div>
+          {yearOnlyKeys.map((y,idx)=>(
+            <div key={y} style={{background:y===curYearKey?"#e8f8ef":"#fff",borderRadius:8,padding:10,marginBottom:8,border:y===curYearKey?"1px solid #a8d8b8":"1px solid #e8e8e8"}}>
+              <div style={{fontWeight:700,fontSize:12,color:y===curYearKey?"#1a7a3c":"#555",marginBottom:8,display:"flex",alignItems:"center",gap:6}}>
+                {y===curYearKey&&<span style={{background:"#27ae60",color:"#fff",borderRadius:10,padding:"1px 7px",fontSize:10}}>올해</span>}
+                {yearLabels[y]}
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                <div>
+                  <label style={{fontSize:11,color:"#888",fontWeight:600,display:"block",marginBottom:3}}>금액 (원)</label>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:5}}>
+                    {presets.map(v=>(
+                      <button key={v} onClick={()=>setData(d=>({...d,[y]:v}))}
+                        style={{background:data[y]===v?"#2d6a9f":"#e8f0fe",color:data[y]===v?"#fff":"#2d6a9f",
+                          border:"none",borderRadius:20,padding:"3px 10px",cursor:"pointer",fontSize:12,fontWeight:600,
+                          transition:"all .15s"}}>
+                        {v.toLocaleString()}
+                      </button>
+                    ))}
+                    <button onClick={()=>setData(d=>({...d,[y]:0}))}
+                      style={{background:data[y]===0?"#e74c3c":"#fde8e8",color:data[y]===0?"#fff":"#e74c3c",
+                        border:"none",borderRadius:20,padding:"3px 10px",cursor:"pointer",fontSize:12,fontWeight:600}}>
+                      미납
+                    </button>
+                  </div>
+                  <input type="number" value={data[y]||0}
+                    onChange={e=>setData(d=>({...d,[y]:parseInt(e.target.value)||0}))}
+                    placeholder="직접 입력"
+                    style={{width:"100%",border:"1.5px solid #90b8e0",borderRadius:7,padding:"9px 10px",fontSize:14,boxSizing:"border-box"}}/>
+                </div>
+                <div>
+                  <label style={{fontSize:11,color:"#888",fontWeight:600,display:"block",marginBottom:3}}>납부일</label>
+                  <input type="date" value={data[y+"_date"]||""}
+                    onChange={e=>setData(d=>({...d,[y+"_date"]:e.target.value}))}
+                    style={{width:"100%",border:"1.5px solid #90b8e0",borderRadius:7,padding:"9px 10px",fontSize:14,boxSizing:"border-box"}}/>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        {/* 금액 프리셋 설정 */}
+        <div style={{marginTop:12,background:"#f8f9fa",borderRadius:8,padding:10,border:"1px solid #e0e0e0"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:showPresetEdit?8:0}}>
+            <span style={{fontSize:11,color:"#888",fontWeight:600}}>⚙️ 금액 버튼 설정</span>
+            <button onClick={()=>setShowPresetEdit(!showPresetEdit)}
+              style={{background:"none",border:"none",color:"#2d6a9f",fontSize:11,cursor:"pointer",fontWeight:600}}>
+              {showPresetEdit?"닫기":"수정 ▼"}
+            </button>
+          </div>
+          {showPresetEdit&&(
+            <div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:8}}>
+                {presets.map(v=>(
+                  <span key={v} style={{background:"#e8f0fe",color:"#2d6a9f",borderRadius:20,padding:"3px 10px",fontSize:12,display:"flex",alignItems:"center",gap:4}}>
+                    {v.toLocaleString()}
+                    <button onClick={()=>removePreset(v)} style={{background:"none",border:"none",color:"#e74c3c",cursor:"pointer",fontSize:12,padding:0,lineHeight:1}}>✕</button>
+                  </span>
+                ))}
+              </div>
+              <div style={{display:"flex",gap:6}}>
+                <input type="number" value={presetInput} onChange={e=>setPresetInput(e.target.value)}
+                  onKeyDown={e=>e.key==="Enter"&&addPreset()}
+                  placeholder="금액 추가 (예: 100000)"
+                  style={{flex:1,border:"1px solid #e0e0e0",borderRadius:6,padding:"6px 10px",fontSize:12}}/>
+                <button onClick={addPreset} style={{background:"#2d6a9f",color:"#fff",border:"none",borderRadius:6,padding:"6px 12px",cursor:"pointer",fontSize:12,fontWeight:700}}>추가</button>
+              </div>
+            </div>
+          )}
+        </div>
+        <div style={{display:"flex",gap:8,marginTop:12}}>
+          <button onClick={onSave} style={{flex:1,background:"linear-gradient(135deg,#2d6a9f,#4a90c4)",color:"#fff",border:"none",borderRadius:8,padding:"12px",cursor:"pointer",fontWeight:700,fontSize:14}}>💾 저장</button>
+          <button onClick={onClose} style={{background:"#f0f0f0",border:"none",borderRadius:8,padding:"12px 20px",cursor:"pointer",fontSize:13}}>취소</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+function FeesPage({fees,setFees,feeYears,setFeeYears,yearLabels,setYearLabels,feeAmounts,setFeeAmounts,transactions,setTransactions,members,setMembers,isAdmin,feePresets,setFeePresets}) {
+  const curYearKey="y"+new Date().getFullYear();
+  const [search,setSearch]=useState("");
+  const [showAddYear,setShowAddYear]=useState(false);
+  const [newYear,setNewYear]=useState("");
+
+  const [editMember,setEditMember]=useState(null);
+  const [editData,setEditData]=useState({});
+  const [feeTab,setFeeTab]=useState("active");
+
+  const yearOnlyKeys=useMemo(()=>
+    feeYears.filter(y=>y!=="entry").sort((a,b)=>b.localeCompare(a))
+  ,[feeYears]);
+
+  const filtered=useMemo(()=>fees
+    .filter(f=>{
+      const member=(members||[]).find(m=>m.id===f.memberId||m.name===f.name);
+      const active=!member||member.active!==false;
+      if(feeTab==="active"&&!active) return false;
+      if(feeTab==="inactive"&&active) return false;
+      return !search||f.name.includes(search);
+    })
+    .sort((a,b)=>a.name.localeCompare(b.name,"ko"))
+  ,[fees,search,members,feeTab]);
+
+  const yearTotals=useMemo(()=>yearOnlyKeys.reduce((acc,y)=>{
+    acc[y]=fees.reduce((s,f)=>s+(f[y]||0),0); return acc;
+  },{}),[fees,yearOnlyKeys]);
+  const grandTotal=Object.values(yearTotals).reduce((s,v)=>s+v,0);
+
+  const openEdit=(row)=>{setEditMember(row);setEditData({...row});};
+  const closeEdit=()=>{setEditMember(null);};
+  const saveEdit=()=>{
+    if(setFees) setFees(fees.map(f=>f.memberId===editData.memberId?{...f,...editData}:f));
+    closeEdit();
+  };
+  const deleteFee=(row)=>{
+    if(setFees) setFees(fees.filter(f=>f.memberId!==row.memberId));
+  };
+
+  const addYear=()=>{
+    if(!newYear) return;
+    const key="y"+newYear;
+    if(feeYears.includes(key)) return;
+    setFeeYears([...feeYears,key]);
+    setYearLabels({...yearLabels,[key]:newYear+"년"});
+    if(setFees) setFees(fees.map(f=>({...f,[key]:0,[key+"_date"]:""})));
+    setNewYear("");setShowAddYear(false);
+  };
+
+  const removeYear=(key)=>{
+    setFeeYears(feeYears.filter(y=>y!==key));
+    const nl={...yearLabels};delete nl[key];setYearLabels(nl);
+  };
+
+
+  const downloadFees=()=>{
+    let csv="이름";
+    yearOnlyKeys.forEach(y=>{csv+=","+(yearLabels[y]||y)+"(금액),"+(yearLabels[y]||y)+"(날짜)";});
+    csv+="\n";
+    filtered.forEach(f=>{
+      csv+=f.name;
+      yearOnlyKeys.forEach(y=>{csv+=","+(f[y]||0)+","+(f[y+"_date"]||"");});
+      csv+="\n";
+    });
+    const b=new Blob(["\uFEFF"+csv],{type:"text/csv"});
+    const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="회비납부현황.csv";a.click();
+  };
+
+  return (
+    <div>
+      <FeeEditModal
+        member={editMember}
+        data={editData}
+        setData={setEditData}
+        yearOnlyKeys={yearOnlyKeys}
+        yearLabels={yearLabels}
+        onSave={saveEdit}
+        onClose={closeEdit}
+        feeAmounts={feeAmounts}
+        feePresets={feePresets}
+        setFeePresets={setFeePresets}
+      />
+      {/* 헤더 */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,flexWrap:"wrap",gap:8}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+          <h2 style={{margin:0,fontSize:18,fontWeight:700}}>💰 회원별 회비 납부 현황</h2>
+          <div style={{display:"flex",gap:4}}>
+            <button onClick={()=>setFeeTab("active")} style={{background:feeTab==="active"?"#2d6a9f":"#f0f0f0",color:feeTab==="active"?"#fff":"#666",border:"none",borderRadius:20,padding:"4px 12px",cursor:"pointer",fontSize:12,fontWeight:600}}>
+              활성 {fees.filter(f=>{const m=(members||[]).find(x=>x.id===f.memberId||x.name===f.name);return !m||m.active!==false;}).length}명
+            </button>
+            <button onClick={()=>setFeeTab("inactive")} style={{background:feeTab==="inactive"?"#e74c3c":"#f0f0f0",color:feeTab==="inactive"?"#fff":"#666",border:"none",borderRadius:20,padding:"4px 12px",cursor:"pointer",fontSize:12,fontWeight:600}}>
+              비활성 {fees.filter(f=>{const m=(members||[]).find(x=>x.id===f.memberId||x.name===f.name);return m&&m.active===false;}).length}명
+            </button>
+          </div>
+        </div>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+          <div style={{position:"relative",display:"flex",alignItems:"center"}}>
+            <span style={{position:"absolute",left:10,fontSize:15,color:"#aaa",pointerEvents:"none"}}>🔍</span>
+            <input value={search} onChange={e=>setSearch(e.target.value)}
+              placeholder="이름 검색 (예: 손경옥)"
+              style={{border:"2px solid #2d6a9f",borderRadius:8,padding:"8px 12px 8px 32px",fontSize:14,width:200,outline:"none"}}/>
+            {search&&<button onClick={()=>setSearch("")}
+              style={{position:"absolute",right:8,background:"none",border:"none",cursor:"pointer",fontSize:14,color:"#aaa",padding:0,lineHeight:1}}>✕</button>}
+          </div>
+          <ExcelBtn onClick={downloadFees} label="엑셀 다운로드"/>
+          {isAdmin&&<button onClick={()=>setShowAddYear(!showAddYear)}
+            style={{background:"#27ae60",color:"#fff",border:"none",borderRadius:7,padding:"7px 14px",cursor:"pointer",fontSize:13,fontWeight:600,whiteSpace:"nowrap"}}>
+            {showAddYear?"✕ 닫기":"+ 연도 추가"}
+          </button>}
+        </div>
+      </div>
+      {/* 연도 추가 폼 */}
+      {showAddYear&&isAdmin&&(
+        <div style={{background:"#fff",borderRadius:10,padding:14,marginBottom:12,boxShadow:"0 2px 8px rgba(0,0,0,.08)",border:"2px solid #27ae60",display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
+          <span style={{fontSize:13,fontWeight:600,color:"#27ae60"}}>새 연도 추가</span>
+          <input type="number" value={newYear} onChange={e=>setNewYear(e.target.value)} placeholder="예) 2027"
+            style={{border:"1px solid #e0e0e0",borderRadius:6,padding:"6px 10px",fontSize:13,width:110}}
+            onKeyDown={e=>{if(e.key==="Enter")addYear();}}/>
+          <button onClick={addYear} style={{background:"#27ae60",color:"#fff",border:"none",borderRadius:6,padding:"7px 16px",cursor:"pointer",fontWeight:600}}>추가</button>
+          <button onClick={()=>{setShowAddYear(false);setNewYear("");}} style={{background:"#f0f0f0",border:"none",borderRadius:6,padding:"7px 12px",cursor:"pointer"}}>취소</button>
+        </div>
+      )}
+
+      {/* 합계 요약 바 */}
+      <div style={{background:"linear-gradient(135deg,#1a3a5c,#2d6a9f)",borderRadius:10,padding:"10px 16px",marginBottom:8,display:"flex",flexWrap:"wrap",gap:12,alignItems:"center"}}>
+        <span style={{color:"#fff",fontWeight:700,fontSize:13}}>📊 합계</span>
+        {yearOnlyKeys.map(y=>(
+          <span key={y} style={{background:"rgba(255,255,255,.15)",color:y===curYearKey?"#ffe88a":"#b8d4f8",borderRadius:8,padding:"4px 10px",fontSize:12,fontWeight:600}}>
+            {yearLabels[y]||y}: {(yearTotals[y]||0).toLocaleString()}원
+          </span>
+        ))}
+        <span style={{background:"rgba(255,220,100,.25)",color:"#ffe88a",borderRadius:8,padding:"4px 10px",fontSize:13,fontWeight:700,marginLeft:"auto"}}>
+          총계: {grandTotal.toLocaleString()}원
+        </span>
+      </div>
+      {/* 안내 */}
+      {filtered.length===0&&(
+        <div style={{textAlign:"center",padding:40,color:"#aaa"}}>데이터가 없습니다</div>
+      )}
+      {/* 테이블 */}
+      {filtered.length>0&&(
+        <div style={{overflowX:"auto"}}>
+          <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,minWidth:600}}>
+            <thead>
+              <tr style={{background:"#1a3a5c"}}>
+                <th style={{padding:"10px 8px",textAlign:"left",color:"#b8d4f8",fontWeight:700,minWidth:80,position:"sticky",left:0,background:"#1a3a5c",zIndex:2}}>성명</th>
+                {yearOnlyKeys.map((y,idx)=>(
+                  <th key={y} style={{padding:"10px 8px",textAlign:"center",color:y===curYearKey?"#ffe88a":"#b8d4f8",fontWeight:700,minWidth:100}}>
+                    {yearLabels[y]||y}
+                    {y===curYearKey&&<span style={{display:"block",fontSize:9,color:"#ffe88a",opacity:.8}}>올해</span>}
+                    {isAdmin&&<button onClick={()=>removeYear(y)} style={{display:"block",margin:"2px auto 0",background:"none",border:"none",color:"rgba(255,255,255,.4)",cursor:"pointer",fontSize:10}}>✕</button>}
+                  </th>
+                ))}
+                <th style={{padding:"10px 8px",textAlign:"right",color:"#ffe88a",fontWeight:700,minWidth:80,position:"sticky",right:0,background:"#1a3a5c",zIndex:2}}>소계</th>
+                {isAdmin&&<th style={{padding:"10px 8px",textAlign:"center",color:"#b8d4f8",fontWeight:700,minWidth:60}}>관리</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((row,i)=>{
+                const rowTotal=yearOnlyKeys.reduce((s,y)=>s+(row[y]||0),0);
+                return(
+                  <tr key={row.memberId||i} style={{background:i%2===0?"#fff":"#f8fafc",borderBottom:"1px solid #eee"}}>
+                    <td style={{padding:"9px 8px",fontWeight:600,color:"#222",position:"sticky",left:0,background:i%2===0?"#fff":"#f8fafc",zIndex:1}}>{row.name}</td>
+                    {yearOnlyKeys.map(y=>(
+                      <td key={y} style={{padding:"9px 8px",textAlign:"center",color:y===curYearKey?(row[y]>0?"#1a7a3c":"#c0392b"):(row[y]>0?"#27ae60":"#bbb"),fontWeight:y===curYearKey?700:400}}>
+                        {row[y]>0?row[y].toLocaleString()+"원":"미납"}
+                        {row[y+"_date"]&&<div style={{fontSize:10,color:"#aaa"}}>{row[y+"_date"]}</div>}
+                      </td>
+                    ))}
+                    <td style={{padding:"9px 8px",textAlign:"right",fontWeight:700,color:"#2d6a9f",position:"sticky",right:isAdmin?60:0,background:i%2===0?"#fff":"#f8fafc",zIndex:1}}>
+                      {rowTotal.toLocaleString()}원
+                    </td>
+                    {isAdmin&&(
+                      <td style={{padding:"9px 8px",textAlign:"center"}}>
+                        <div style={{display:"flex",gap:4,justifyContent:"center"}}>
+                          <button onClick={()=>openEdit(row)} style={{background:"#e8f0fe",color:"#2d6a9f",border:"none",borderRadius:5,padding:"4px 8px",cursor:"pointer",fontSize:11}}>✏️</button>
+                          <button onClick={()=>deleteFee(row)} style={{background:"#fde8e8",color:"#c0392b",border:"none",borderRadius:5,padding:"4px 8px",cursor:"pointer",fontSize:11}}>🗑️</button>
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                );
+              })}
+              {/* 합계 행 */}
+              <tr style={{background:"#f0f4ff",fontWeight:700,borderTop:"2px solid #2d6a9f"}}>
+                <td style={{padding:"10px 8px",color:"#2d6a9f",position:"sticky",left:0,background:"#f0f4ff",zIndex:1}}>합계</td>
+                {yearOnlyKeys.map(y=>(
+                  <td key={y} style={{padding:"10px 8px",textAlign:"center",color:"#2d6a9f"}}>
+                    {(yearTotals[y]||0).toLocaleString()}원
+                  </td>
+                ))}
+                <td style={{padding:"10px 8px",textAlign:"right",color:"#2d6a9f",position:"sticky",right:isAdmin?60:0,background:"#f0f4ff",zIndex:1}}>
+                  {grandTotal.toLocaleString()}원
+                </td>
+                {isAdmin&&<td></td>}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+function EntryPage({fees,setFees,members,setMembers,isAdmin}) {
+  const [search,setSearch]=useState("");
+  const [feeTab,setFeeTab]=useState("active");
+  const [confirmOpt,setConfirmOpt]=useState(null);
+  const [editRow,setEditRow]=useState(null);
+  const [editAmt,setEditAmt]=useState("");
+  const [editDate,setEditDate]=useState("");
+
+
+  const filtered=useMemo(()=>fees.filter(f=>{
+    const member=(members||[]).find(m=>m.id===f.memberId||m.name===f.name);
+    const active=!member||member.active!==false;
+    if(feeTab==="active"&&!active) return false;
+    if(feeTab==="inactive"&&active) return false;
+    return !search||f.name.includes(search);
+  }).sort((a,b)=>a.name.localeCompare(b.name,"ko")),[fees,search,members,feeTab]);
+
+  const paidCount=filtered.filter(f=>f.entry>0).length;
+  const unpaidCount=filtered.filter(f=>!f.entry).length;
+  const entryTotal=filtered.reduce((s,f)=>s+(f.entry||0),0);
+
+  return (
+    <div style={{background:"#fff",borderRadius:12,padding:20,boxShadow:"0 2px 8px rgba(0,0,0,.08)"}}>
+      {confirmOpt&&<ConfirmModal message={confirmOpt.message} onConfirm={confirmOpt.onConfirm} onCancel={()=>setConfirmOpt(null)}/>}
+      {editRow&&(
+        <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,.5)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={e=>{if(e.target===e.currentTarget)setEditRow(null);}}>
+          <div style={{background:"#fff",borderRadius:14,padding:24,width:"100%",maxWidth:360,boxShadow:"0 8px 32px rgba(0,0,0,.2)"}}>
+            <div style={{fontWeight:700,fontSize:16,color:"#8e44ad",marginBottom:16}}>🎫 {editRow.name} 가입비 수정</div>
+            <div style={{marginBottom:12}}>
+              <label style={{fontSize:12,color:"#888",fontWeight:600,display:"block",marginBottom:4}}>가입비 금액 (원)</label>
+              <input type="number" value={editAmt} onChange={e=>setEditAmt(e.target.value)}
+                style={{width:"100%",border:"1.5px solid #c080e0",borderRadius:8,padding:"9px 12px",fontSize:15,boxSizing:"border-box"}} placeholder="예) 30000"/>
+            </div>
+            <div style={{marginBottom:20}}>
+              <label style={{fontSize:12,color:"#888",fontWeight:600,display:"block",marginBottom:4}}>납부일</label>
+              <input type="date" value={editDate} onChange={e=>setEditDate(e.target.value)}
+                style={{width:"100%",border:"1.5px solid #c080e0",borderRadius:8,padding:"9px 12px",fontSize:15,boxSizing:"border-box"}}/>
+            </div>
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={()=>{if(setFees)setFees(fees.map(f=>f.memberId===editRow.memberId?{...f,entry:parseInt(editAmt)||0,entry_date:editDate}:f));setEditRow(null);}}
+                style={{flex:1,background:"#8e44ad",color:"#fff",border:"none",borderRadius:8,padding:"11px",cursor:"pointer",fontWeight:700,fontSize:14}}>💾 저장</button>
+              <button onClick={()=>setEditRow(null)} style={{background:"#f0f0f0",border:"none",borderRadius:8,padding:"11px 16px",cursor:"pointer",fontSize:13}}>취소</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* 헤더 */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,flexWrap:"wrap",gap:8}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+          <h2 style={{margin:0,fontSize:18,fontWeight:700}}>🎫 가입비 납부 현황</h2>
+          <div style={{display:"flex",gap:4}}>
+            <button onClick={()=>setFeeTab("active")} style={{background:feeTab==="active"?"#8e44ad":"#f0f0f0",color:feeTab==="active"?"#fff":"#666",border:"none",borderRadius:20,padding:"4px 12px",cursor:"pointer",fontSize:12,fontWeight:600}}>
+              활성 {fees.filter(f=>{const m=(members||[]).find(x=>x.id===f.memberId||x.name===f.name);return !m||m.active!==false;}).length}명
+            </button>
+            <button onClick={()=>setFeeTab("inactive")} style={{background:feeTab==="inactive"?"#e74c3c":"#f0f0f0",color:feeTab==="inactive"?"#fff":"#666",border:"none",borderRadius:20,padding:"4px 12px",cursor:"pointer",fontSize:12,fontWeight:600}}>
+              비활성 {fees.filter(f=>{const m=(members||[]).find(x=>x.id===f.memberId||x.name===f.name);return m&&m.active===false;}).length}명
+            </button>
+          </div>
+        </div>
+        <div style={{display:"flex",gap:6,alignItems:"center"}}>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="이름 검색"
+            style={{border:"1px solid #e0e0e0",borderRadius:7,padding:"7px 12px",fontSize:13,width:120}}/>
+        </div>
+      </div>
+      {/* 요약 카드 */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:14}}>
+        {[
+          {label:"납부 완료",value:paidCount+"명",color:"#8e44ad",bg:"#f8f0ff"},
+          {label:"미납",value:unpaidCount+"명",color:"#e74c3c",bg:"#fff0f0"},
+          {label:"납부 총액",value:entryTotal.toLocaleString()+"원",color:"#2d6a9f",bg:"#f0f4ff"},
+        ].map((c,i)=>(
+          <div key={i} style={{background:c.bg,borderRadius:10,padding:"12px 16px",textAlign:"center"}}>
+            <div style={{fontSize:11,color:"#888",marginBottom:4}}>{c.label}</div>
+            <div style={{fontSize:16,fontWeight:700,color:c.color}}>{c.value}</div>
+          </div>
+        ))}
+      </div>
+      {/* 테이블 */}
+      <div style={{overflowX:"auto",borderRadius:8,border:"1px solid #e8e8e8"}}>
+        <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
+          <thead>
+            <tr style={{background:"#3a1f5c"}}>
+              <th style={{padding:"10px 8px",textAlign:"center",color:"#fff",width:36}}>#</th>
+              <th style={{padding:"10px 14px",textAlign:"left",color:"#f3c8ff",fontWeight:700}}>성명</th>
+              <th style={{padding:"10px 14px",textAlign:"center",color:"#f3c8ff",fontWeight:700}}>납부여부</th>
+              <th style={{padding:"10px 14px",textAlign:"right",color:"#f3c8ff",fontWeight:700}}>가입비</th>
+              <th style={{padding:"10px 14px",textAlign:"center",color:"#f3c8ff",fontWeight:700}}>납부일</th>
+              {isAdmin&&<th style={{padding:"10px 8px",textAlign:"center",color:"#f3c8ff",fontWeight:700}}>관리</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((f,i)=>(
+              <tr key={f.memberId||i} style={{background:i%2===0?"#fff":"#fdf8ff",borderBottom:"1px solid #f0e8ff"}}>
+                <td style={{padding:"10px 8px",textAlign:"center",color:"#bbb",fontSize:12}}>{i+1}</td>
+                <td style={{padding:"10px 14px",fontWeight:600,color:"#2d1a40"}}>{f.name}</td>
+                <td style={{padding:"10px 14px",textAlign:"center"}}>
+                  <span style={{background:f.entry>0?"#e8f5e9":"#fce4ec",color:f.entry>0?"#27ae60":"#e74c3c",
+                    borderRadius:20,padding:"3px 10px",fontSize:12,fontWeight:700}}>
+                    {f.entry>0?"납부":"미납"}
+                  </span>
+                </td>
+                <td style={{padding:"10px 14px",textAlign:"right",fontWeight:700,color:f.entry>0?"#27ae60":"#bbb"}}>
+                  {f.entry>0?f.entry.toLocaleString()+"원":"-"}
+                </td>
+                <td style={{padding:"10px 14px",textAlign:"center",color:"#888",fontSize:12}}>{f.entry_date||"-"}</td>
+                {isAdmin&&(
+                  <td style={{padding:"10px 8px",textAlign:"center"}}>
+                    <div style={{display:"flex",gap:4,justifyContent:"center"}}>
+                      <button onClick={()=>{setEditRow(f);setEditAmt(f.entry||"");setEditDate(f.entry_date||"");}}
+                        style={{background:"#f3e0ff",color:"#8e44ad",border:"none",borderRadius:5,padding:"4px 8px",cursor:"pointer",fontSize:11}}>✏️</button>
+                      <button onClick={()=>setConfirmOpt({message:`${f.name} 가입비 삭제?`,onConfirm:()=>{setFees(fees.filter(x=>x.memberId!==f.memberId));setConfirmOpt(null);}})}
+                        style={{background:"#fde8e8",color:"#c0392b",border:"none",borderRadius:5,padding:"4px 8px",cursor:"pointer",fontSize:11}}>🗑️</button>
+                    </div>
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+
+function BankPage({transactions,setTransactions,isAdmin,feePresets,setFeePresets,feeAmounts}) {
+  const [showForm,setShowForm]=useState(false);
+  const [form,setForm]=useState({date:"",desc:"",amount:"",type:"income"});
+  const [search,setSearch]=useState("");
+  const [filterYear,setFilterYear]=useState("전체");
+  const [filterMonth,setFilterMonth]=useState("전체");
+  const [filterType,setFilterType]=useState("전체");
+  const [viewMode,setViewMode]=useState("list");
+  const [selectedYear,setSelectedYear]=useState("");
+  const [expandedMonth,setExpandedMonth]=useState(null);
+  const [editId,setEditId]=useState(null);
+  const [editForm,setEditForm]=useState({});
+
+  const balance=transactions.length?transactions[transactions.length-1].balance:0;
+  const thisYear=new Date().getFullYear().toString();
+  const thisYearTxs=transactions.filter(t=>t.date.startsWith(thisYear));
+  const totalIncome=thisYearTxs.filter(t=>t.type==="income").reduce((s,t)=>s+t.amount,0);
+  const totalExpense=thisYearTxs.filter(t=>t.type==="expense").reduce((s,t)=>s+Math.abs(t.amount),0);
+
+  const years=useMemo(()=>[...new Set(transactions.map(t=>t.date.slice(0,4)))].sort().reverse(),[transactions]);
+  const months=["01","02","03","04","05","06","07","08","09","10","11","12"];
+
+  // 잔액 재계산 유틸
+  const recalcBalances=(txList)=>{
+    let bal=0;
+    return txList.map(t=>{bal+=t.amount;return{...t,balance:bal};});
+  };
+
+  const addTx=()=>{
+    if(!form.date||!form.desc||!form.amount){alert("날짜·내역·금액을 모두 입력해주세요.");return;}
+    if(!setTransactions){alert("🔒 관리자만 입력할 수 있습니다.");return;}
+    const amt=form.type==="income"?Math.abs(parseInt(form.amount)):-Math.abs(parseInt(form.amount));
+    const sorted=[...transactions,{id:Date.now(),date:form.date,desc:form.desc,amount:amt,type:form.type,balance:0}]
+      .sort((a,b)=>a.date.localeCompare(b.date));
+    setTransactions(recalcBalances(sorted));
+    setForm({date:"",desc:"",amount:"",type:"income"});
+    setShowForm(false);
+  };
+
+  const saveEdit=()=>{
+    if(!editForm.date||!editForm.desc||!editForm.amount)return;
+    const amt=editForm.type==="income"?Math.abs(parseInt(editForm.amount)):-Math.abs(parseInt(editForm.amount));
+    const updated=transactions.map(t=>t.id===editId?{...t,date:editForm.date,desc:editForm.desc,amount:amt,type:editForm.type}:t)
+      .sort((a,b)=>a.date.localeCompare(b.date));
+    setTransactions(recalcBalances(updated));
+    setEditId(null);
+  };
+
+  const deleteTx=(id)=>{
+    const updated=transactions.filter(t=>t.id!==id);
+    setTransactions(recalcBalances(updated));
+  };
+
+  const yearlySummary=useMemo(()=>years.map(yr=>{
+    const txs=transactions.filter(t=>t.date.startsWith(yr));
+    const income=txs.filter(t=>t.type==="income").reduce((s,t)=>s+t.amount,0);
+    const expense=txs.filter(t=>t.type==="expense").reduce((s,t)=>s+Math.abs(t.amount),0);
+    return{year:yr,income,expense,net:income-expense,count:txs.length};
+  }),[transactions,years]);
+
+  const monthlySummary=useMemo(()=>{
+    const yr=selectedYear||years[0]||"";
+    return months.map(m=>{
+      const txs=transactions.filter(t=>t.date.startsWith(yr+"-"+m));
+      const income=txs.filter(t=>t.type==="income").reduce((s,t)=>s+t.amount,0);
+      const expense=txs.filter(t=>t.type==="expense").reduce((s,t)=>s+Math.abs(t.amount),0);
+      return{month:m,label:parseInt(m)+"월",income,expense,net:income-expense,count:txs.length,txs};
+    }).filter(m=>m.count>0);
+  },[transactions,selectedYear,years]);
+
+  // 목록 뷰 필터 (연도·월·구분·키워드)
+  const filtered=useMemo(()=>{
+    return [...transactions].reverse().filter(t=>{
+      const yr=t.date.slice(0,4); const mo=t.date.slice(5,7);
+      return (filterYear==="전체"||yr===filterYear)&&
+             (filterMonth==="전체"||mo===filterMonth)&&
+             (filterType==="전체"||(filterType==="수입"&&t.type==="income")||(filterType==="지출"&&t.type==="expense"))&&
+             (!search||t.desc.includes(search)||t.date.includes(search));
+    });
+  },[transactions,filterYear,filterMonth,filterType,search]);
+
+  // 필터 적용된 수입/지출 합계
+  const filteredIncome=filtered.filter(t=>t.type==="income").reduce((s,t)=>s+t.amount,0);
+  const filteredExpense=filtered.filter(t=>t.type==="expense").reduce((s,t)=>s+Math.abs(t.amount),0);
+
+  const downloadBank=()=>{
+    const yr=filterYear==="전체"?"전체":filterYear;
+    const header=["날짜","내역","구분","금액","잔액"];
+    const rows=filtered.map(t=>[t.date,t.desc,t.type==="income"?"수입":"지출",t.amount,t.balance]);
+    const summary=[[""],["수입합계","","",(filteredIncome),""],["지출합계","","",(filteredExpense),""],["잔액","","",balance,""]];
+    downloadExcel([{name:`통장내역_${yr}`,data:[header,...rows,...summary]}],`부여미협_수입지출내역_${yr}_${new Date().toISOString().slice(0,10)}.xlsx`);
+  };
+
+  const tabBtn=(mode,label)=>(
+    <button onClick={()=>setViewMode(mode)} style={{padding:"7px 14px",border:"none",borderRadius:7,cursor:"pointer",fontSize:12,fontWeight:600,background:viewMode===mode?"#2d6a9f":"#f0f0f0",color:viewMode===mode?"#fff":"#666"}}>{label}</button>
+  );
+
+  const selStyle={border:"1px solid #e0e0e0",borderRadius:7,padding:"6px 10px",fontSize:12,background:"#fff",cursor:"pointer"};
+
+  return (
+    <div>
+      {/* 헤더 */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,flexWrap:"wrap",gap:8}}>
+        <h2 style={{margin:0,fontSize:18,fontWeight:700}}>🏦 통장 수입·지출 내역</h2>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+          <div style={{display:"flex",gap:4,background:"#f0f0f0",borderRadius:8,padding:3}}>
+            {tabBtn("list","📋 내역")} {tabBtn("yearly","📊 연도별")} {tabBtn("monthly","📅 월별")}
+          </div>
+          <ExcelBtn onClick={downloadBank} label="엑셀 다운로드"/>
+          {isAdmin&&<button onClick={()=>setShowForm(!showForm)}
+            style={{background:"#2d6a9f",color:"#fff",border:"none",borderRadius:8,padding:"8px 14px",cursor:"pointer",fontSize:13,fontWeight:600,whiteSpace:"nowrap"}}>
+            {showForm?"✕ 닫기":"+ 내역 추가"}
+          </button>}
+        </div>
+      </div>
+
+      {/* 요약 카드 */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:14}}>
+        {[
+          {label:"현재 잔액",value:won(balance),color:"#2d6a9f",bold:true},
+          {label:thisYear+"년 수입",value:won(totalIncome),color:"#27ae60"},
+          {label:thisYear+"년 지출",value:won(totalExpense),color:"#e74c3c"}
+        ].map((c,i)=>(
+          <div key={i} style={{background:i===0?"#f0f7ff":"#fff",borderRadius:10,padding:"14px 18px",boxShadow:i===0?"0 2px 8px rgba(45,106,159,.15)":"0 1px 4px rgba(0,0,0,.06)",textAlign:"center",border:i===0?"2px solid #2d6a9f":"none"}}>
+            <div style={{fontSize:11,color:"#888"}}>{c.label}</div>
+            <div style={{fontSize:i===0?22:18,fontWeight:700,color:c.color,marginTop:4}}>{c.value}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* 내역 추가 모달 */}
+      {showForm&&isAdmin&&(
+        <div style={{position:"fixed",top:0,left:0,width:"100%",height:"100%",background:"rgba(0,0,0,.5)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:16,boxSizing:"border-box"}}
+          onClick={e=>{if(e.target===e.currentTarget){setShowForm(false);setForm({date:"",desc:"",amount:"",type:"income"});}}}>
+          <div style={{background:"#fff",borderRadius:16,padding:24,width:"100%",maxWidth:420,boxShadow:"0 20px 60px rgba(0,0,0,.3)"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
+              <div style={{fontWeight:700,fontSize:16,color:"#2d6a9f"}}>🏦 내역 추가</div>
+              <button onClick={()=>{setShowForm(false);setForm({date:"",desc:"",amount:"",type:"income"});}} style={{background:"none",border:"none",fontSize:22,cursor:"pointer",color:"#aaa"}}>✕</button>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
+              <div style={{gridColumn:"1/-1"}}>
+                <label style={{fontSize:12,color:"#666",fontWeight:600,display:"block",marginBottom:4}}>날짜</label>
+                <input type="date" value={form.date} onChange={e=>setForm(f=>({...f,date:e.target.value}))}
+                  style={{width:"100%",border:"1.5px solid #e0e0e0",borderRadius:7,padding:"9px 12px",fontSize:14,boxSizing:"border-box"}}/>
+              </div>
+              <div style={{gridColumn:"1/-1"}}>
+                <label style={{fontSize:12,color:"#666",fontWeight:600,display:"block",marginBottom:4}}>내역</label>
+                <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:6}}>
+                  {["회비납입","가입비납입","행사수입","운영비","식비","교통비","기타지출"].map(d=>(
+                    <button key={d} onClick={()=>setForm(f=>({...f,desc:d}))}
+                      style={{background:form.desc===d?"#27ae60":"#f0f0f0",
+                        color:form.desc===d?"#fff":"#555",
+                        border:"none",borderRadius:20,padding:"3px 10px",cursor:"pointer",fontSize:11,fontWeight:600}}>
+                      {d}
+                    </button>
+                  ))}
+                </div>
+                <input value={form.desc} onChange={e=>setForm(f=>({...f,desc:e.target.value}))} placeholder="직접 입력"
+                  style={{width:"100%",border:"1.5px solid #e0e0e0",borderRadius:7,padding:"9px 12px",fontSize:14,boxSizing:"border-box"}}/>
+              </div>
+              <div>
+                <label style={{fontSize:12,color:"#666",fontWeight:600,display:"block",marginBottom:4}}>금액 (원)</label>
+                <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:6}}>
+                  {(feePresets&&feePresets.length>0?feePresets:[50000,(feeAmounts&&feeAmounts["y"+new Date().getFullYear()])||100000,150000,200000]).map(v=>(
+                    <button key={v} onClick={()=>setForm(f=>({...f,amount:v.toString()}))}
+                      style={{background:parseInt(form.amount)===v?"#2d6a9f":"#e8f0fe",
+                        color:parseInt(form.amount)===v?"#fff":"#2d6a9f",
+                        border:"none",borderRadius:20,padding:"4px 12px",cursor:"pointer",fontSize:12,fontWeight:600}}>
+                      {v.toLocaleString()}
+                    </button>
+                  ))}
+                </div>
+                <input type="number" value={form.amount} onChange={e=>setForm(f=>({...f,amount:e.target.value}))} placeholder="직접 입력"
+                  style={{width:"100%",border:"1.5px solid #e0e0e0",borderRadius:7,padding:"9px 12px",fontSize:14,boxSizing:"border-box"}}/>
+              </div>
+              <div>
+                <label style={{fontSize:12,color:"#666",fontWeight:600,display:"block",marginBottom:4}}>구분</label>
+                <select value={form.type} onChange={e=>setForm(f=>({...f,type:e.target.value}))}
+                  style={{width:"100%",border:"1.5px solid #e0e0e0",borderRadius:7,padding:"9px 12px",fontSize:14,boxSizing:"border-box"}}>
+                  <option value="income">💚 수입</option>
+                  <option value="expense">❤️ 지출</option>
+                </select>
+              </div>
+            </div>
+            <div style={{display:"flex",gap:8,marginTop:4}}>
+              <button onClick={addTx} style={{flex:1,background:"linear-gradient(135deg,#2d6a9f,#4a90c4)",color:"#fff",border:"none",borderRadius:8,padding:"12px",cursor:"pointer",fontWeight:700,fontSize:14}}>➕ 추가</button>
+              <button onClick={()=>{setShowForm(false);setForm({date:"",desc:"",amount:"",type:"income"});}} style={{background:"#f0f0f0",border:"none",borderRadius:8,padding:"12px 20px",cursor:"pointer",fontSize:13}}>취소</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── 내역 뷰 ── */}
+      {viewMode==="list"&&(
+        <div>
+          {/* 필터바 */}
+          <div style={{background:"#fff",borderRadius:10,padding:"12px 14px",marginBottom:12,boxShadow:"0 1px 4px rgba(0,0,0,.06)",display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+            <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 내역·날짜 검색"
+              style={{...selStyle,minWidth:160,flex:1}}/>
+            <select value={filterYear} onChange={e=>{setFilterYear(e.target.value);setFilterMonth("전체");}} style={selStyle}>
+              <option>전체</option>{years.map(y=><option key={y}>{y}</option>)}
+            </select>
+            <select value={filterMonth} onChange={e=>setFilterMonth(e.target.value)} style={selStyle} disabled={filterYear==="전체"}>
+              <option>전체</option>{months.map(m=><option key={m} value={m}>{parseInt(m)}월</option>)}
+            </select>
+            <select value={filterType} onChange={e=>setFilterType(e.target.value)} style={selStyle}>
+              <option>전체</option><option>수입</option><option>지출</option>
+            </select>
+            {(filterYear!=="전체"||filterMonth!=="전체"||filterType!=="전체"||search)&&(
+              <button onClick={()=>{setFilterYear("전체");setFilterMonth("전체");setFilterType("전체");setSearch("");}}
+                style={{background:"#fde8e8",color:"#c0392b",border:"none",borderRadius:6,padding:"6px 10px",cursor:"pointer",fontSize:12,fontWeight:600}}>
+                ✕ 초기화
+              </button>
+            )}
+            <span style={{fontSize:12,color:"#aaa",marginLeft:"auto"}}>
+              {filtered.length}건 · 수입 <span style={{color:"#27ae60",fontWeight:600}}>{filteredIncome.toLocaleString()}</span> · 지출 <span style={{color:"#e74c3c",fontWeight:600}}>{filteredExpense.toLocaleString()}</span>
+            </span>
+          </div>
+
+          <div style={{background:"#fff",borderRadius:10,boxShadow:"0 1px 4px rgba(0,0,0,.06)",overflow:"auto"}}>
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
+              <thead><tr style={{background:"#f8f9fa",borderBottom:"2px solid #e8e8e8"}}>
+                {["날짜","내역","구분","금액","잔액",""].map((h,i)=>(
+                  <th key={i} style={{padding:"10px 14px",textAlign:i>=3&&i<5?"right":"left",color:"#666",fontWeight:600,whiteSpace:"nowrap"}}>{h}</th>
+                ))}
+              </tr></thead>
+              <tbody>
+                {filtered.length===0&&<tr><td colSpan={6} style={{textAlign:"center",padding:40,color:"#ccc"}}>검색 결과가 없습니다</td></tr>}
+                {filtered.map((t,i)=>{
+                  const isEdit=editId===t.id;
+                  return(
+                    <tr key={t.id} style={{borderBottom:"1px solid #f5f5f5",background:isEdit?"#f0f7ff":i%2?"#fafafa":"#fff"}}>
+                      <td style={{padding:"8px 14px",color:"#888",whiteSpace:"nowrap"}}>
+                        {isEdit
+                          ?<input type="date" value={editForm.date} onChange={e=>setEditForm({...editForm,date:e.target.value})}
+                              style={{border:"1px solid #2d6a9f",borderRadius:5,padding:"3px 6px",fontSize:12,width:130}}/>
+                          :t.date}
+                      </td>
+                      <td style={{padding:"8px 14px"}}>
+                        {isEdit
+                          ?<input value={editForm.desc} onChange={e=>setEditForm({...editForm,desc:e.target.value})}
+                              style={{width:"100%",border:"1px solid #2d6a9f",borderRadius:5,padding:"3px 6px",fontSize:12,boxSizing:"border-box",minWidth:160}}/>
+                          :t.desc}
+                      </td>
+                      <td style={{padding:"8px 14px"}}>
+                        {isEdit
+                          ?<select value={editForm.type} onChange={e=>setEditForm({...editForm,type:e.target.value})}
+                              style={{border:"1px solid #2d6a9f",borderRadius:5,padding:"3px 6px",fontSize:12}}>
+                              <option value="income">수입</option><option value="expense">지출</option></select>
+                          :<span style={{background:t.type==="income"?"#e8f5e9":"#fde8e8",color:t.type==="income"?"#27ae60":"#e74c3c",padding:"2px 8px",borderRadius:20,fontSize:11,fontWeight:600}}>
+                            {t.type==="income"?"수입":"지출"}</span>}
+                      </td>
+                      <td style={{padding:"8px 14px",textAlign:"right",color:t.type==="income"?"#27ae60":"#e74c3c",fontWeight:600}}>
+                        {isEdit
+                          ?<input type="number" value={Math.abs(parseInt(editForm.amount)||0)} onChange={e=>setEditForm({...editForm,amount:e.target.value})}
+                              style={{width:100,border:"1px solid #2d6a9f",borderRadius:5,padding:"3px 6px",textAlign:"right",fontSize:12}}/>
+                          :<>{t.type==="income"?"+":"-"}{Math.abs(t.amount||0).toLocaleString()}</>}
+                      </td>
+                      <td style={{padding:"8px 14px",textAlign:"right",fontWeight:700,color:"#444"}}>{(t.balance||0).toLocaleString()}</td>
+                      <td style={{padding:"8px 10px",whiteSpace:"nowrap"}}>
+                        {isAdmin&&(isEdit
+                          ?<><button onClick={saveEdit} style={{background:"#27ae60",color:"#fff",border:"none",borderRadius:5,padding:"3px 9px",cursor:"pointer",fontSize:11,fontWeight:600,marginRight:4}}>저장</button>
+                             <button onClick={()=>setEditId(null)} style={{background:"#f0f0f0",border:"none",borderRadius:5,padding:"3px 8px",cursor:"pointer",fontSize:11}}>취소</button></>
+                          :<><button onClick={()=>{setEditId(t.id);setEditForm({date:t.date,desc:t.desc,amount:Math.abs(t.amount),type:t.type});}}
+                              style={{background:"#e8f0fe",color:"#2d6a9f",border:"none",borderRadius:5,padding:"3px 8px",cursor:"pointer",fontSize:11,marginRight:4}}>수정</button>
+                             <button onClick={()=>deleteTx(t.id)} style={{background:"#fde8e8",color:"#c0392b",border:"none",borderRadius:5,padding:"3px 8px",cursor:"pointer",fontSize:11}}>삭제</button></>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ── 연도별 뷰 ── */}
+      {viewMode==="yearly"&&(
+        <div>
+          <div style={{background:"#fff",borderRadius:10,boxShadow:"0 1px 4px rgba(0,0,0,.06)",overflow:"hidden",marginBottom:14}}>
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
+              <thead><tr style={{background:"#f8f9fa",borderBottom:"2px solid #e8e8e8"}}>
+                {["연도","수입 합계","지출 합계","순수입","건수"].map((h,i)=>(
+                  <th key={i} style={{padding:"12px 16px",textAlign:i===0?"left":"right",color:"#666",fontWeight:600}}>{h}</th>
+                ))}
+              </tr></thead>
+              <tbody>
+                {years.length===0&&<tr><td colSpan={5} style={{textAlign:"center",padding:30,color:"#ccc"}}>내역이 없습니다</td></tr>}
+                {yearlySummary.map((y,i)=>(
+                  <tr key={y.year} style={{borderBottom:"1px solid #f0f0f0",background:i%2?"#fafafa":"#fff",cursor:"pointer"}}
+                    onClick={()=>{setSelectedYear(y.year);setExpandedMonth(null);setViewMode("monthly");}}>
+                    <td style={{padding:"12px 16px",fontWeight:700,color:"#2d6a9f"}}>{y.year}년 →</td>
+                    <td style={{padding:"12px 16px",textAlign:"right",color:"#27ae60",fontWeight:600}}>{y.income.toLocaleString()}</td>
+                    <td style={{padding:"12px 16px",textAlign:"right",color:"#e74c3c",fontWeight:600}}>{y.expense.toLocaleString()}</td>
+                    <td style={{padding:"12px 16px",textAlign:"right",fontWeight:700,color:y.net>=0?"#2d6a9f":"#e74c3c"}}>{y.net>=0?"+":""}{y.net.toLocaleString()}</td>
+                    <td style={{padding:"12px 16px",textAlign:"right",color:"#888"}}>{y.count}건</td>
+                  </tr>
+                ))}
+                {yearlySummary.length>0&&(
+                  <tr style={{background:"#f0f4f8",borderTop:"2px solid #d0d9e8",fontWeight:700}}>
+                    <td style={{padding:"12px 16px"}}>전체 합계</td>
+                    <td style={{padding:"12px 16px",textAlign:"right",color:"#27ae60"}}>{yearlySummary.reduce((s,y)=>s+y.income,0).toLocaleString()}</td>
+                    <td style={{padding:"12px 16px",textAlign:"right",color:"#e74c3c"}}>{yearlySummary.reduce((s,y)=>s+y.expense,0).toLocaleString()}</td>
+                    <td style={{padding:"12px 16px",textAlign:"right",color:"#2d6a9f"}}>{yearlySummary.reduce((s,y)=>s+y.net,0).toLocaleString()}</td>
+                    <td style={{padding:"12px 16px",textAlign:"right",color:"#888"}}>{yearlySummary.reduce((s,y)=>s+y.count,0)}건</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          {/* 막대 그래프 */}
+          <div style={{background:"#fff",borderRadius:10,padding:20,boxShadow:"0 1px 4px rgba(0,0,0,.06)"}}>
+            <div style={{fontWeight:700,fontSize:14,marginBottom:14,color:"#333"}}>📊 연도별 수입·지출 비교</div>
+            {yearlySummary.length===0&&<div style={{textAlign:"center",color:"#ccc",padding:20}}>데이터가 없습니다</div>}
+            {[...yearlySummary].reverse().map(y=>{
+              const max=Math.max(...yearlySummary.map(x=>Math.max(x.income,x.expense)),1);
+              return(<div key={y.year} style={{marginBottom:16}}>
+                <div style={{fontSize:12,fontWeight:700,marginBottom:6,color:"#555"}}>{y.year}년</div>
+                {[["수입",y.income,"#27ae60"],["지출",y.expense,"#e74c3c"]].map(([l,v,c])=>(
+                  <div key={l} style={{display:"flex",alignItems:"center",gap:8,marginBottom:5}}>
+                    <span style={{fontSize:11,color:"#888",width:28,textAlign:"right",flexShrink:0}}>{l}</span>
+                    <div style={{flex:1,background:"#f0f0f0",borderRadius:6,height:16,overflow:"hidden"}}>
+                      <div style={{background:c,height:"100%",width:`${v/max*100}%`,borderRadius:6,transition:"width .3s"}}/>
+                    </div>
+                    <span style={{fontSize:11,color:c,fontWeight:600,minWidth:90,textAlign:"right",flexShrink:0}}>{v.toLocaleString()}원</span>
+                  </div>
+                ))}
+              </div>);
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── 월별 뷰 ── */}
+      {viewMode==="monthly"&&(
+        <div>
+          {/* 연도 선택 탭 */}
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12,flexWrap:"wrap"}}>
+            <span style={{fontSize:13,fontWeight:600,color:"#555"}}>연도 선택:</span>
+            {years.map(yr=>(
+              <button key={yr} onClick={()=>{setSelectedYear(yr);setExpandedMonth(null);}}
+                style={{padding:"5px 16px",border:"none",borderRadius:20,cursor:"pointer",fontSize:13,fontWeight:600,
+                  background:(selectedYear||years[0])===yr?"#2d6a9f":"#f0f0f0",
+                  color:(selectedYear||years[0])===yr?"#fff":"#666"}}>
+                {yr}년
+              </button>
+            ))}
+            {years.length===0&&<span style={{fontSize:13,color:"#ccc"}}>내역이 없습니다</span>}
+          </div>
+
+          {/* 월별 요약 + 상세 */}
+          <div style={{background:"#fff",borderRadius:10,boxShadow:"0 1px 4px rgba(0,0,0,.06)",overflow:"hidden"}}>
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
+              <thead><tr style={{background:"#f8f9fa",borderBottom:"2px solid #e8e8e8"}}>
+                {["월","수입","지출","순수입","건수",""].map((h,i)=>(
+                  <th key={i} style={{padding:"10px 14px",textAlign:i>=1&&i<=4?"right":"left",color:"#666",fontWeight:600}}>{h}</th>
+                ))}
+              </tr></thead>
+              <tbody>
+                {monthlySummary.length===0&&<tr><td colSpan={6} style={{textAlign:"center",padding:30,color:"#ccc"}}>해당 연도의 거래 내역이 없습니다</td></tr>}
+                {monthlySummary.map((m,i)=>(
+                  <React.Fragment key={m.month}>
+                    {/* 월 요약 행 */}
+                    <tr style={{borderBottom:"1px solid #f0f0f0",background:expandedMonth===m.month?"#eef5ff":i%2?"#fafafa":"#fff",cursor:"pointer"}}
+                      onClick={()=>setExpandedMonth(expandedMonth===m.month?null:m.month)}>
+                      <td style={{padding:"11px 14px",fontWeight:700,color:"#2d6a9f"}}>
+                        {expandedMonth===m.month?"▼":"▶"} {m.label}
+                      </td>
+                      <td style={{padding:"11px 14px",textAlign:"right",color:"#27ae60",fontWeight:600}}>{m.income>0?m.income.toLocaleString():"-"}</td>
+                      <td style={{padding:"11px 14px",textAlign:"right",color:"#e74c3c",fontWeight:600}}>{m.expense>0?m.expense.toLocaleString():"-"}</td>
+                      <td style={{padding:"11px 14px",textAlign:"right",fontWeight:700,color:m.net>=0?"#2d6a9f":"#e74c3c"}}>
+                        {m.net>=0?"+":""}{m.net.toLocaleString()}
+                      </td>
+                      <td style={{padding:"11px 14px",textAlign:"right",color:"#888"}}>{m.count}건</td>
+                      <td style={{padding:"11px 14px",fontSize:11,color:"#aaa",textAlign:"right"}}>{expandedMonth===m.month?"접기":"펼치기"}</td>
+                    </tr>
+                    {/* 월 상세 내역 */}
+                    {expandedMonth===m.month&&(
+                      <>
+                        {m.txs.map((t)=>{
+                          const isEdit=editId===t.id;
+                          return(
+                            <tr key={t.id} style={{background:isEdit?"#f0f7ff":"#f5f9ff",borderBottom:"1px solid #e8f0fb"}}>
+                              <td style={{padding:"7px 14px 7px 30px",color:"#888",fontSize:12,whiteSpace:"nowrap"}}>
+                                {isEdit
+                                  ?<input type="date" value={editForm.date} onChange={e=>setEditForm({...editForm,date:e.target.value})}
+                                      style={{border:"1px solid #2d6a9f",borderRadius:4,padding:"2px 5px",fontSize:11,width:120}}/>
+                                  :t.date}
+                              </td>
+                              <td style={{padding:"7px 14px",fontSize:12}}>
+                                {isEdit
+                                  ?<input value={editForm.desc} onChange={e=>setEditForm({...editForm,desc:e.target.value})}
+                                      style={{border:"1px solid #2d6a9f",borderRadius:4,padding:"2px 5px",fontSize:11,width:"100%",minWidth:140,boxSizing:"border-box"}}/>
+                                  :t.desc}
+                              </td>
+                              <td style={{padding:"7px 14px",fontSize:12}}>
+                                {isEdit
+                                  ?<select value={editForm.type} onChange={e=>setEditForm({...editForm,type:e.target.value})}
+                                      style={{border:"1px solid #2d6a9f",borderRadius:4,padding:"2px 4px",fontSize:11}}>
+                                      <option value="income">수입</option><option value="expense">지출</option></select>
+                                  :<span style={{background:t.type==="income"?"#e8f5e9":"#fde8e8",color:t.type==="income"?"#27ae60":"#e74c3c",padding:"1px 7px",borderRadius:20,fontSize:10,fontWeight:600}}>{t.type==="income"?"수입":"지출"}</span>}
+                              </td>
+                              <td style={{padding:"7px 14px",textAlign:"right",color:t.type==="income"?"#27ae60":"#e74c3c",fontWeight:600,fontSize:12}}>
+                                {isEdit
+                                  ?<input type="number" value={Math.abs(parseInt(editForm.amount)||0)} onChange={e=>setEditForm({...editForm,amount:e.target.value})}
+                                      style={{width:90,border:"1px solid #2d6a9f",borderRadius:4,padding:"2px 5px",textAlign:"right",fontSize:11}}/>
+                                  :<>{t.type==="income"?"+":"-"}{Math.abs(t.amount||0).toLocaleString()}</>}
+                              </td>
+                              <td style={{padding:"7px 14px",textAlign:"right",fontSize:12,color:"#888"}}>{(t.balance||0).toLocaleString()}</td>
+                              <td style={{padding:"7px 10px",whiteSpace:"nowrap"}}>
+                                {isAdmin&&(isEdit
+                                  ?<><button onClick={()=>{saveEdit();}} style={{background:"#27ae60",color:"#fff",border:"none",borderRadius:4,padding:"2px 8px",cursor:"pointer",fontSize:10,fontWeight:600,marginRight:3}}>저장</button>
+                                     <button onClick={()=>setEditId(null)} style={{background:"#f0f0f0",border:"none",borderRadius:4,padding:"2px 7px",cursor:"pointer",fontSize:10}}>취소</button></>
+                                  :<><button onClick={e=>{e.stopPropagation();setEditId(t.id);setEditForm({date:t.date,desc:t.desc,amount:Math.abs(t.amount),type:t.type});}}
+                                      style={{background:"#e8f0fe",color:"#2d6a9f",border:"none",borderRadius:4,padding:"2px 7px",cursor:"pointer",fontSize:10,marginRight:3}}>수정</button>
+                                     <button onClick={e=>{e.stopPropagation();deleteTx(t.id);}} style={{background:"#fde8e8",color:"#c0392b",border:"none",borderRadius:4,padding:"2px 7px",cursor:"pointer",fontSize:10}}>삭제</button></>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        {/* 월 소계 */}
+                        <tr style={{background:"#e8eef7",borderBottom:"2px solid #c8d4e8"}}>
+                          <td colSpan={2} style={{padding:"7px 14px 7px 30px",fontSize:12,fontWeight:700,color:"#2d6a9f"}}>{m.label} 소계</td>
+                          <td style={{padding:"7px 14px",fontSize:12}}></td>
+                          <td style={{padding:"7px 14px",textAlign:"right",fontSize:12,fontWeight:700,color:m.net>=0?"#2d6a9f":"#e74c3c"}}>
+                            {m.net>=0?"+":""}{m.net.toLocaleString()}
+                          </td>
+                          <td style={{padding:"7px 14px",textAlign:"right",fontSize:12,color:"#888"}}>{m.count}건</td>
+                          <td></td>
+                        </tr>
+                      </>
+                    )}
+                  </React.Fragment>
+                ))}
+                {/* 연간 합계 */}
+                {monthlySummary.length>0&&(
+                  <tr style={{background:"#dce5f3",borderTop:"2px solid #b0c0da",fontWeight:700}}>
+                    <td style={{padding:"12px 14px",color:"#1a3a5c"}}>{(selectedYear||years[0])}년 합계</td>
+                    <td style={{padding:"12px 14px",textAlign:"right",color:"#27ae60"}}>{monthlySummary.reduce((s,m)=>s+m.income,0).toLocaleString()}</td>
+                    <td style={{padding:"12px 14px",textAlign:"right",color:"#e74c3c"}}>{monthlySummary.reduce((s,m)=>s+m.expense,0).toLocaleString()}</td>
+                    <td style={{padding:"12px 14px",textAlign:"right",color:"#1a3a5c"}}>{monthlySummary.reduce((s,m)=>s+m.net,0).toLocaleString()}</td>
+                    <td style={{padding:"12px 14px",textAlign:"right",color:"#888"}}>{monthlySummary.reduce((s,m)=>s+m.count,0)}건</td>
+                    <td></td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── 회의록 ──
+
+function MeetingsPage({meetings,setMeetings,members,isAdmin}) {
+  const [showForm,setShowForm]=useState(false);
+  const [selected,setSelected]=useState(null);
+  const [form,setForm]=useState({type:"임원회의",date:"",venue:"",attendCount:0,attendees:[],content:"",photos:[]});
+  const [uploading,setUploading]=useState(false);
+  const [lightbox,setLightbox]=useState(null);
+  const [filterYear,setFilterYear]=useState("전체");
+  const [filterType,setFilterType]=useState("전체");
+  const [search,setSearch]=useState("");
+  const [expandedId,setExpandedId]=useState(null);
+
+  const years=useMemo(()=>[...new Set(meetings.map(m=>m.date.slice(0,4)).filter(Boolean))].sort().reverse(),[meetings]);
+
+  const filtered=useMemo(()=>[...meetings].reverse().filter(m=>{
+    const yr=m.date.slice(0,4);
+    return (filterYear==="전체"||yr===filterYear)&&
+           (filterType==="전체"||m.type===filterType)&&
+           (!search||m.content.includes(search)||m.venue.includes(search)||(m.attendees||[]).some(a=>a.includes(search)));
+  }),[meetings,filterYear,filterType,search]);
+
+  const saveMeeting=()=>{
+    if(!form.date||!form.content)return;
+    const data={...form,attendCount:form.attendees.length||form.attendCount};
+    if(selected!==null){setMeetings(meetings.map(m=>m.id===selected?{...data,id:selected}:m));setSelected(null);}
+    else setMeetings([...meetings,{...data,id:Date.now()}]);
+    setForm({type:"임원회의",date:"",venue:"",attendCount:0,attendees:[],content:"",photos:[]});
+    setShowForm(false);
+  };
+
+  const toggleAttendee=name=>{
+    const list=form.attendees.includes(name)?form.attendees.filter(n=>n!==name):[...form.attendees,name];
+    setForm(f=>({...f,attendees:list,attendCount:list.length}));
+  };
+
+  const uploadPhotos=async(files)=>{
+    if(!window._fbOk||!window._st){alert("Storage 미연결");return;}
+    const cur=(form.photos||[]);
+    if(cur.length+files.length>5){alert("사진은 최대 5장까지 올릴 수 있습니다.");return;}
+    setUploading(true);
+    const urls=[];
+    for(const file of files){
+      try{
+        const path=`meetings/${Date.now()}_${file.name}`;
+        const sRef=window._st.ref(path);
+        await sRef.put(file);
+        const url=await sRef.getDownloadURL();
+        urls.push({url,path,name:file.name});
+      }catch(e){console.error("업로드 실패:",e);}
+    }
+    setForm(f=>({...f,photos:[...(f.photos||[]),...urls]}));
+    setUploading(false);
+  };
+
+  const removePhoto=async(photo,fromForm=true)=>{
+    if(window._fbOk&&window._st){
+      try{await window._st.ref(photo.path).delete();}catch(e){}
+    }
+    if(fromForm) setForm(f=>({...f,photos:(f.photos||[]).filter(p=>p.path!==photo.path)}));
+  };
+
+  const deleteMeeting=(id)=>{
+    const m=meetings.find(x=>x.id===id);
+    if(m&&m.photos) m.photos.forEach(p=>removePhoto(p,false));
+    setMeetings(meetings.filter(x=>x.id!==id));
+  };
+
+  const selStyle={border:"1px solid #e0e0e0",borderRadius:7,padding:"6px 10px",fontSize:12,background:"#fff",cursor:"pointer"};
+
+  return (
+    <div>
+      {/* 라이트박스 */}
+      {lightbox&&(
+        <div style={{position:"fixed",top:0,left:0,width:"100%",height:"100%",background:"rgba(0,0,0,.92)",zIndex:5000,display:"flex",alignItems:"center",justifyContent:"center"}}
+          onClick={()=>setLightbox(null)}>
+          <img src={lightbox} style={{maxWidth:"92%",maxHeight:"92%",borderRadius:10,objectFit:"contain",boxShadow:"0 8px 40px rgba(0,0,0,.5)"}}/>
+          <button onClick={()=>setLightbox(null)} style={{position:"absolute",top:20,right:20,background:"rgba(255,255,255,.2)",border:"none",color:"#fff",fontSize:22,width:44,height:44,borderRadius:22,cursor:"pointer"}}>✕</button>
+        </div>
+      )}
+
+      {/* 헤더 */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,flexWrap:"wrap",gap:8}}>
+        <h2 style={{margin:0,fontSize:18,fontWeight:700}}>📋 총회 · 임원회의 관리</h2>
+        {isAdmin&&<button onClick={()=>{setSelected(null);setForm({type:"임원회의",date:"",venue:"",attendCount:0,attendees:[],content:"",photos:[]});setShowForm(true);}}
+          style={{background:"#8e44ad",color:"#fff",border:"none",borderRadius:8,padding:"8px 16px",cursor:"pointer",fontSize:13,fontWeight:600}}>+ 회의 기록</button>}
+      </div>
+
+      {/* 검색/필터 */}
+      <div style={{background:"#fff",borderRadius:10,padding:"12px 14px",marginBottom:14,boxShadow:"0 1px 4px rgba(0,0,0,.06)",display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+        <select value={filterYear} onChange={e=>setFilterYear(e.target.value)} style={selStyle}>
+          <option value="전체">전체 연도</option>
+          {years.map(y=><option key={y}>{y}</option>)}
+        </select>
+        <select value={filterType} onChange={e=>setFilterType(e.target.value)} style={selStyle}>
+          <option value="전체">전체 종류</option>
+          {["정기총회","임시총회","임원회의","분과회의","기타"].map(t=><option key={t}>{t}</option>)}
+        </select>
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="내용·장소·참석자 검색"
+          style={{flex:1,minWidth:150,border:"1px solid #e0e0e0",borderRadius:7,padding:"6px 12px",fontSize:12}}/>
+        {(filterYear!=="전체"||filterType!=="전체"||search)&&
+          <button onClick={()=>{setFilterYear("전체");setFilterType("전체");setSearch("");}}
+            style={{background:"#f0f0f0",border:"none",borderRadius:7,padding:"6px 12px",cursor:"pointer",fontSize:12}}>초기화</button>}
+        <span style={{fontSize:12,color:"#888"}}>{filtered.length}건</span>
+      </div>
+
+      {/* 입력 폼 */}
+      {showForm&&(
+        <div style={{background:"#fff",borderRadius:10,padding:20,marginBottom:16,boxShadow:"0 2px 10px rgba(0,0,0,.1)",border:"2px solid #8e44ad"}}>
+          <div style={{fontWeight:700,marginBottom:14,color:"#8e44ad",fontSize:15}}>{selected?"회의 수정":"새 회의 기록"}</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:12}}>
+            <div><label style={{fontSize:11,color:"#888"}}>회의 종류</label>
+              <select value={form.type} onChange={e=>setForm(f=>({...f,type:e.target.value}))} style={{width:"100%",border:"1px solid #e0e0e0",borderRadius:6,padding:"7px 10px",fontSize:13}}>
+                {["정기총회","임시총회","임원회의","분과회의","기타"].map(t=><option key={t}>{t}</option>)}</select></div>
+            <div><label style={{fontSize:11,color:"#888"}}>날짜</label>
+              <input type="date" value={form.date} onChange={e=>setForm(f=>({...f,date:e.target.value}))} style={{width:"100%",border:"1px solid #e0e0e0",borderRadius:6,padding:"7px 10px",fontSize:13,boxSizing:"border-box"}}/></div>
+            <div><label style={{fontSize:11,color:"#888"}}>장소</label>
+              <input value={form.venue} onChange={e=>setForm(f=>({...f,venue:e.target.value}))} style={{width:"100%",border:"1px solid #e0e0e0",borderRadius:6,padding:"7px 10px",fontSize:13,boxSizing:"border-box"}}/></div>
+          </div>
+          <div style={{marginBottom:12}}>
+            <label style={{fontSize:11,color:"#888"}}>참석자 선택 ({form.attendees.length}명)</label>
+            <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:6,maxHeight:120,overflow:"auto",border:"1px solid #e0e0e0",borderRadius:8,padding:10}}>
+              {members.filter(m=>m.name).map(m=>(
+                <button key={m.id} onClick={()=>toggleAttendee(m.name)}
+                  style={{border:form.attendees.includes(m.name)?"2px solid #8e44ad":"1px solid #e0e0e0",background:form.attendees.includes(m.name)?"#f3e8ff":"#f8f8f8",borderRadius:20,padding:"3px 10px",cursor:"pointer",fontSize:12,color:form.attendees.includes(m.name)?"#8e44ad":"#555",fontWeight:form.attendees.includes(m.name)?600:400}}>
+                  {m.name}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div style={{marginBottom:12}}><label style={{fontSize:11,color:"#888"}}>회의 내용</label>
+            <textarea value={form.content} onChange={e=>setForm(f=>({...f,content:e.target.value}))} rows={5}
+              style={{width:"100%",border:"1px solid #e0e0e0",borderRadius:6,padding:"8px 10px",fontSize:13,resize:"vertical",boxSizing:"border-box"}}/></div>
+          <div style={{marginBottom:12}}>
+            <label style={{fontSize:11,color:"#888",display:"block",marginBottom:6}}>📷 사진 첨부 (최대 5장, 첫번째 사진이 대표사진)</label>
+            <label style={{display:"inline-flex",alignItems:"center",gap:6,background:"#f3e8ff",color:"#8e44ad",border:"1.5px dashed #c080e0",borderRadius:8,padding:"8px 16px",cursor:uploading?"not-allowed":"pointer",fontSize:13,fontWeight:600,opacity:uploading?.6:1}}>
+              {uploading?"⏳ 업로드 중...":"📁 사진 선택"}
+              <input type="file" accept="image/*" multiple onChange={e=>uploadPhotos(Array.from(e.target.files))} style={{display:"none"}} disabled={uploading}/>
+            </label>
+            {(form.photos||[]).length>0&&(
+              <div style={{display:"flex",flexWrap:"wrap",gap:8,marginTop:10}}>
+                {(form.photos||[]).map((p,i)=>(
+                  <div key={i} style={{position:"relative"}}>
+                    {i===0&&<span style={{position:"absolute",top:4,left:4,background:"#8e44ad",color:"#fff",fontSize:9,fontWeight:700,padding:"1px 5px",borderRadius:8,zIndex:1}}>대표</span>}
+                    <img src={p.url} style={{width:80,height:80,objectFit:"cover",borderRadius:8,cursor:"pointer",border:i===0?"2px solid #8e44ad":"2px solid #e0d0f0"}} onClick={()=>setLightbox(p.url)}/>
+                    <button onClick={()=>removePhoto(p)} style={{position:"absolute",top:-6,right:-6,background:"#e74c3c",color:"#fff",border:"none",borderRadius:10,width:20,height:20,fontSize:11,cursor:"pointer",lineHeight:"20px",padding:0,zIndex:2}}>✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={saveMeeting} style={{background:"#8e44ad",color:"#fff",border:"none",borderRadius:7,padding:"8px 20px",cursor:"pointer",fontWeight:600}}>저장</button>
+            <button onClick={()=>{setShowForm(false);setSelected(null);}} style={{background:"#f0f0f0",border:"none",borderRadius:7,padding:"8px 16px",cursor:"pointer"}}>취소</button>
+          </div>
+        </div>
+      )}
+
+      {/* 회의록 목록 */}
+      <div style={{display:"flex",flexDirection:"column",gap:12}}>
+        {filtered.map(m=>{
+          const isExpanded=expandedId===m.id;
+          const thumb=m.photos&&m.photos.length>0?m.photos[0]:null;
+          return(
+            <div key={m.id} style={{background:"#fff",borderRadius:12,boxShadow:"0 1px 6px rgba(0,0,0,.08)",borderLeft:"5px solid #8e44ad",overflow:"hidden"}}>
+              {/* 카드 헤더 - 항상 보임 */}
+              <div style={{display:"flex",gap:0,cursor:"pointer"}} onClick={()=>setExpandedId(isExpanded?null:m.id)}>
+                {/* 대표사진 */}
+                {thumb?(
+                  <div style={{width:110,minWidth:110,height:110,overflow:"hidden",flexShrink:0}}>
+                    <img src={thumb.url} style={{width:"100%",height:"100%",objectFit:"cover"}} onClick={e=>{e.stopPropagation();setLightbox(thumb.url);}}/>
+                  </div>
+                ):(
+                  <div style={{width:110,minWidth:110,height:110,background:"#f5f0fa",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                    <span style={{fontSize:28,opacity:.3}}>📷</span>
+                  </div>
+                )}
+                {/* 요약 정보 */}
+                <div style={{flex:1,padding:"12px 14px",display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
+                  <div>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                      <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                        <span style={{background:"#f3e8ff",color:"#8e44ad",padding:"2px 10px",borderRadius:20,fontSize:12,fontWeight:700}}>{m.type}</span>
+                        <span style={{fontWeight:700,fontSize:15}}>{m.date}</span>
+                        {m.photos&&m.photos.length>0&&<span style={{fontSize:11,color:"#8e44ad"}}>📷 {m.photos.length}장</span>}
+                      </div>
+                      {isAdmin&&<div style={{display:"flex",gap:6}} onClick={e=>e.stopPropagation()}>
+                        <button onClick={()=>{setForm({...m,photos:m.photos||[]});setSelected(m.id);setShowForm(true);}}
+                          style={{background:"#e8f0fe",color:"#2d6a9f",border:"none",borderRadius:5,padding:"3px 9px",cursor:"pointer",fontSize:11}}>수정</button>
+                        <button onClick={()=>deleteMeeting(m.id)}
+                          style={{background:"#fde8e8",color:"#c0392b",border:"none",borderRadius:5,padding:"3px 9px",cursor:"pointer",fontSize:11}}>삭제</button>
+                      </div>}
+                    </div>
+                    <div style={{fontSize:12,color:"#888"}}>📍 {m.venue||"장소 미기재"} · 참석 {m.attendCount}명</div>
+                  </div>
+                  <div style={{fontSize:12,color:"#999",marginTop:6,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"90%"}}>
+                    {m.content.slice(0,60)}{m.content.length>60?"...":""}
+                  </div>
+                </div>
+                <div style={{display:"flex",alignItems:"center",paddingRight:14,color:"#bbb",fontSize:18}}>
+                  {isExpanded?"▲":"▼"}
+                </div>
+              </div>
+
+              {/* 펼쳐진 상세 */}
+              {isExpanded&&(
+                <div style={{borderTop:"1px solid #f0e8f8",padding:16}}>
+                  <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
+                    {/* 사진들 */}
+                    {m.photos&&m.photos.length>0&&(
+                      <div style={{display:"flex",flexDirection:"column",gap:6,flexShrink:0}}>
+                        <div style={{fontSize:11,color:"#888",fontWeight:600}}>📷 사진</div>
+                        <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                          {m.photos.map((p,i)=>(
+                            <div key={i} style={{position:"relative"}}>
+                              {i===0&&<span style={{position:"absolute",top:3,left:3,background:"#8e44ad",color:"#fff",fontSize:9,fontWeight:700,padding:"1px 5px",borderRadius:6,zIndex:1}}>대표</span>}
+                              <img src={p.url} style={{width:120,height:120,objectFit:"cover",borderRadius:8,cursor:"pointer",border:i===0?"2px solid #8e44ad":"2px solid #e0d0f0",transition:"transform .15s"}}
+                                onClick={()=>setLightbox(p.url)}
+                                onMouseOver={e=>e.currentTarget.style.transform="scale(1.04)"}
+                                onMouseOut={e=>e.currentTarget.style.transform="scale(1)"}/>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {/* 내용 */}
+                    <div style={{flex:1,minWidth:200}}>
+                      {m.attendees&&m.attendees.length>0&&(
+                        <div style={{marginBottom:10}}>
+                          <div style={{fontSize:11,color:"#888",fontWeight:600,marginBottom:4}}>참석자</div>
+                          <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+                            {m.attendees.map(a=><span key={a} style={{background:"#f0f0f0",color:"#555",padding:"1px 7px",borderRadius:20,fontSize:11}}>{a}</span>)}
+                          </div>
+                        </div>
+                      )}
+                      <div style={{fontSize:11,color:"#888",fontWeight:600,marginBottom:4}}>회의 내용</div>
+                      <div style={{fontSize:13,color:"#444",lineHeight:1.8,whiteSpace:"pre-wrap",background:"#fafafa",borderRadius:8,padding:"10px 14px"}}>{m.content}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+        {filtered.length===0&&<div style={{textAlign:"center",padding:40,color:"#aaa",fontSize:14}}>검색 결과가 없습니다</div>}
+      </div>
+    </div>
+  );
+}
+// ── 목표금액 ──
+
+function RecoveryPage({projects,setProjects,recoveryTarget,setRecoveryTarget,selectedProject,setSelectedProject,isAdmin}) {
+  const [showProjectForm,setShowProjectForm]=useState(false);
+  const [pForm,setPForm]=useState({name:"",target:""});
+  const [txForm,setTxForm]=useState({date:"",desc:"",amount:"",type:"income"});
+  const [showTxForm,setShowTxForm]=useState(false);
+  const [editingTarget,setEditingTarget]=useState(false);
+  const [targetInput,setTargetInput]=useState("");
+  const [editingPTarget,setEditingPTarget]=useState(false);
+  const [pTargetInput,setPTargetInput]=useState("");
+  const [editingTx,setEditingTx]=useState(null); // 수정 중인 거래 id
+  const [editTxForm,setEditTxForm]=useState({date:"",desc:"",amount:"",type:"income"});
+
+  const recoveryTotal=projects.reduce((sum,p)=>sum+Math.max(p.transactions.reduce((s,t)=>s+t.amount,0),0),0);
+  const recoveryPct=Math.min(100,Math.round(recoveryTotal/recoveryTarget*100));
+  const curProject=selectedProject?projects.find(p=>p.id===selectedProject):null;
+
+  const addProject=()=>{
+    if(!pForm.name||!pForm.target)return;
+    setProjects([...projects,{id:Date.now(),name:pForm.name,target:parseInt(pForm.target),transactions:[]}]);
+    setPForm({name:"",target:""});setShowProjectForm(false);
+  };
+  const addTx=()=>{
+    if(!txForm.date||!txForm.desc||!txForm.amount)return;
+    const amt=txForm.type==="income"?Math.abs(parseInt(txForm.amount)):-Math.abs(parseInt(txForm.amount));
+    setProjects(projects.map(p=>p.id===selectedProject?{...p,transactions:[...p.transactions,{id:Date.now(),date:txForm.date,desc:txForm.desc,amount:amt,type:txForm.type}]}:p));
+    setTxForm({date:"",desc:"",amount:"",type:"income"});setShowTxForm(false);
+  };
+  const saveEditTx=()=>{
+    if(!editTxForm.date||!editTxForm.desc||!editTxForm.amount)return;
+    const amt=editTxForm.type==="income"?Math.abs(parseInt(editTxForm.amount)):-Math.abs(parseInt(editTxForm.amount));
+    setProjects(projects.map(p=>p.id===selectedProject?{...p,transactions:p.transactions.map(t=>t.id===editingTx?{...t,date:editTxForm.date,desc:editTxForm.desc,amount:amt,type:editTxForm.type}:t)}:p));
+    setEditingTx(null);
+  };
+
+  const downloadAllProjects=()=>{
+    const sheets=projects.map(p=>{
+      const header=["날짜","내역","구분","금액"];
+      const rows=p.transactions.map(t=>[t.date,t.desc,t.type==="income"?"수입":"지출",t.amount]);
+      const income=p.transactions.filter(t=>t.type==="income").reduce((s,t)=>s+t.amount,0);
+      const expense=p.transactions.filter(t=>t.type==="expense").reduce((s,t)=>s+Math.abs(t.amount),0);
+      const summary=[["","","",""],["목표금액","","",(p.target)],["총 수입","","",(income)],["총 지출","",(""),(expense)],["순수입","",(""),(income-expense)]];
+      return{name:p.name.slice(0,30),data:[header,...rows,...summary]};
+    });
+    const overviewHeader=["사업명","목표금액","총수입","총지출","순수입","달성률"];
+    const overviewRows=projects.map(p=>{
+      const income=p.transactions.filter(t=>t.type==="income").reduce((s,t)=>s+t.amount,0);
+      const expense=p.transactions.filter(t=>t.type==="expense").reduce((s,t)=>s+Math.abs(t.amount),0);
+      return[p.name,p.target,income,expense,income-expense,Math.round((income-expense)/p.target*100)+"%"];
+    });
+    downloadExcel([{name:"전체현황",data:[overviewHeader,...overviewRows]},...sheets],`부여미협_목표금액내역_${new Date().toISOString().slice(0,10)}.xlsx`);
+  };
+
+  const downloadCurProject=()=>{
+    if(!curProject)return;
+    const header=["날짜","내역","구분","금액"];
+    const rows=curProject.transactions.map(t=>[t.date,t.desc,t.type==="income"?"수입":"지출",t.amount]);
+    downloadExcel([{name:curProject.name.slice(0,30),data:[header,...rows]}],`부여미협_${curProject.name}_${new Date().toISOString().slice(0,10)}.xlsx`);
+  };
+
+  return (
+    <div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:8}}>
+        <h2 style={{margin:0,fontSize:18,fontWeight:700}}>
+          {curProject?<span><button onClick={()=>setSelectedProject(null)} style={{background:"none",border:"none",cursor:"pointer",color:"#2d6a9f",fontSize:14,marginRight:6}}>← 전체</button>{curProject.name}</span>:"🎯 목표금액 관리"}
+        </h2>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+          {!curProject&&<ExcelBtn onClick={downloadAllProjects} label="전체 엑셀 다운로드"/>}
+          {curProject&&<ExcelBtn onClick={downloadCurProject} label="이 사업 엑셀 다운로드"/>}
+          {!curProject&&isAdmin&&<button onClick={()=>setShowProjectForm(true)} style={{background:"#2d6a9f",color:"#fff",border:"none",borderRadius:8,padding:"8px 16px",cursor:"pointer",fontSize:13,fontWeight:600}}>+ 사업 추가</button>}
+          {curProject&&isAdmin&&<button onClick={()=>setShowTxForm(true)} style={{background:"#2d6a9f",color:"#fff",border:"none",borderRadius:8,padding:"8px 16px",cursor:"pointer",fontSize:13,fontWeight:600}}>+ 거래 추가</button>}
+        </div>
+      </div>
+
+      {!curProject&&(
+        <>
+          <div style={{background:"linear-gradient(135deg,#1a3a5c,#2d6a9f)",borderRadius:12,padding:24,marginBottom:16,color:"#fff"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
+              <div style={{fontSize:13,opacity:.8}}>총 목표 금액</div>
+              {isAdmin&&!editingTarget&&<button onClick={()=>{setEditingTarget(true);setTargetInput(recoveryTarget.toString());}} style={{background:"rgba(255,255,255,.2)",border:"1px solid rgba(255,255,255,.4)",color:"#fff",borderRadius:6,padding:"3px 10px",cursor:"pointer",fontSize:11}}>✏️ 목표액 수정</button>}
+            </div>
+            {editingTarget?(
+              <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:12}}>
+                <input type="number" value={targetInput} onChange={e=>{const v=e.target.value;setTargetInput(v);}}
+                  style={{flex:1,border:"2px solid rgba(255,255,255,.6)",borderRadius:8,padding:"8px 12px",fontSize:16,fontWeight:700,background:"rgba(255,255,255,.15)",color:"#fff",outline:"none"}} placeholder="목표금액(원)"/>
+                <button onClick={()=>{const v=parseInt(targetInput);if(v>0){setRecoveryTarget(v);setEditingTarget(false);}}} style={{background:"#f9d342",color:"#333",border:"none",borderRadius:7,padding:"8px 14px",cursor:"pointer",fontWeight:700,fontSize:13}}>저장</button>
+                <button onClick={()=>setEditingTarget(false)} style={{background:"rgba(255,255,255,.2)",border:"none",borderRadius:7,padding:"8px 12px",cursor:"pointer",color:"#fff",fontSize:13}}>취소</button>
+              </div>
+            ):(
+              <div style={{fontSize:28,fontWeight:700,marginBottom:12}}>{won(recoveryTarget)}</div>
+            )}
+            <div style={{background:"rgba(255,255,255,.2)",borderRadius:20,height:28,overflow:"hidden",marginBottom:8}}>
+              <div style={{background:"linear-gradient(90deg,#f9d342,#f39c12)",height:"100%",width:`${recoveryPct}%`,borderRadius:20,display:"flex",alignItems:"center",justifyContent:"flex-end",paddingRight:10}}>
+                <span style={{fontSize:13,fontWeight:700,color:"#333"}}>{recoveryPct}%</span>
+              </div>
+            </div>
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:13,opacity:.9}}>
+              <span>달성: {won(recoveryTotal)}</span><span>잔여: {won(Math.max(0,recoveryTarget-recoveryTotal))}</span>
+            </div>
+          </div>
+
+          {showProjectForm&&isAdmin&&(
+            <div style={{background:"#fff",borderRadius:10,padding:16,marginBottom:14,boxShadow:"0 2px 10px rgba(0,0,0,.08)",border:"2px solid #2d6a9f"}}>
+              <div style={{fontWeight:700,marginBottom:12,color:"#2d6a9f"}}>새 사업 등록</div>
+              <div style={{display:"flex",gap:10}}>
+                <input value={pForm.name} onChange={e=>setPForm({...pForm,name:e.target.value})} placeholder="사업명" style={{flex:1,border:"1px solid #e0e0e0",borderRadius:6,padding:"7px 10px",fontSize:13}}/>
+                <input type="number" value={pForm.target} onChange={e=>setPForm({...pForm,target:e.target.value})} placeholder="목표금액(원)" style={{width:160,border:"1px solid #e0e0e0",borderRadius:6,padding:"7px 10px",fontSize:13}}/>
+                <button onClick={addProject} style={{background:"#2d6a9f",color:"#fff",border:"none",borderRadius:7,padding:"7px 16px",cursor:"pointer",fontWeight:600}}>추가</button>
+                <button onClick={()=>setShowProjectForm(false)} style={{background:"#f0f0f0",border:"none",borderRadius:7,padding:"7px 12px",cursor:"pointer"}}>취소</button>
+              </div>
+            </div>
+          )}
+
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:12}}>
+            {projects.map(p=>{
+              const net=p.transactions.reduce((s,t)=>s+t.amount,0);
+              const income=p.transactions.filter(t=>t.type==="income").reduce((s,t)=>s+t.amount,0);
+              const expense=p.transactions.filter(t=>t.type==="expense").reduce((s,t)=>s+Math.abs(t.amount),0);
+              const pct=Math.min(100,Math.round(net/p.target*100));
+              return(
+                <div key={p.id} style={{background:"#fff",borderRadius:12,padding:18,boxShadow:"0 1px 6px rgba(0,0,0,.07)",cursor:"pointer"}} onClick={()=>setSelectedProject(p.id)}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
+                    <div style={{fontWeight:700,fontSize:14}}>{p.name}</div>
+                    {isAdmin&&<button onClick={e=>{
+                      e.stopPropagation();
+                      if(!setProjects){alert("🔒 관리자만 삭제 가능합니다.");return;}
+                                              setProjects(projects.filter(x=>x.id!==p.id));}} style={{background:"#fde8e8",color:"#c0392b",border:"none",borderRadius:5,padding:"3px 8px",cursor:"pointer",fontSize:11}}>삭제</button>}
+                  </div>
+                  <div style={{fontSize:12,color:"#888",marginBottom:10,display:"grid",gridTemplateColumns:"1fr 1fr",gap:4}}>
+                    <span>목표: {won(p.target)}</span><span>순수입: {won(net)}</span>
+                    <span style={{color:"#27ae60"}}>수입: {won(income)}</span><span style={{color:"#e74c3c"}}>지출: {won(expense)}</span>
+                  </div>
+                  <div style={{background:"#f5f5f5",borderRadius:10,height:14}}>
+                    <div style={{background:pct>=100?"#27ae60":"linear-gradient(90deg,#2d6a9f,#5ba3d9)",height:"100%",width:`${pct}%`,borderRadius:10}}/>
+                  </div>
+                  <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"#aaa",marginTop:4}}>
+                    <span>{p.transactions.length}건</span><span>{pct}% 달성</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      {curProject&&(
+        <div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:14}}>
+            <div style={{background:"#fff",borderRadius:10,padding:"14px 18px",boxShadow:"0 1px 4px rgba(0,0,0,.06)",textAlign:"center",position:"relative"}}>
+              <div style={{fontSize:11,color:"#888"}}>목표 금액</div>
+              {editingPTarget?(
+                <div style={{display:"flex",gap:6,marginTop:6,alignItems:"center"}}>
+                  <input type="number" value={pTargetInput} onChange={e=>setPTargetInput(e.target.value)}
+                    style={{flex:1,border:"2px solid #2d6a9f",borderRadius:6,padding:"4px 8px",fontSize:13,width:"100%",boxSizing:"border-box"}} placeholder="목표금액"/>
+                  <button onClick={()=>{const v=parseInt(pTargetInput);if(v>0){setProjects(projects.map(p=>p.id===selectedProject?{...p,target:v}:p));setEditingPTarget(false);}}} style={{background:"#2d6a9f",color:"#fff",border:"none",borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:11,whiteSpace:"nowrap"}}>저장</button>
+                  <button onClick={()=>setEditingPTarget(false)} style={{background:"#f0f0f0",border:"none",borderRadius:6,padding:"4px 6px",cursor:"pointer",fontSize:11}}>✕</button>
+                </div>
+              ):(
+                <div style={{fontSize:18,fontWeight:700,color:"#2d6a9f",marginTop:4}}>
+                  {won(curProject.target)}
+                  {isAdmin&&<button onClick={()=>{setEditingPTarget(true);setPTargetInput(curProject.target.toString());}} style={{marginLeft:6,background:"none",border:"none",cursor:"pointer",fontSize:11,color:"#aaa"}}>✏️</button>}
+                </div>
+              )}
+            </div>
+            {[
+              {label:"총 수입",value:won(curProject.transactions.filter(t=>t.type==="income").reduce((s,t)=>s+t.amount,0)),color:"#27ae60"},
+              {label:"총 지출",value:won(curProject.transactions.filter(t=>t.type==="expense").reduce((s,t)=>s+Math.abs(t.amount),0)),color:"#e74c3c"},
+            ].map((c,i)=>(
+              <div key={i} style={{background:"#fff",borderRadius:10,padding:"14px 18px",boxShadow:"0 1px 4px rgba(0,0,0,.06)",textAlign:"center"}}>
+                <div style={{fontSize:11,color:"#888"}}>{c.label}</div>
+                <div style={{fontSize:18,fontWeight:700,color:c.color,marginTop:4}}>{c.value}</div>
+              </div>
+            ))}
+          </div>
+          {showTxForm&&isAdmin&&(
+            <div style={{background:"#fff",borderRadius:10,padding:16,marginBottom:14,boxShadow:"0 2px 10px rgba(0,0,0,.08)",border:"2px solid #2d6a9f"}}>
+              <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"flex-end"}}>
+                <div><label style={{fontSize:11,color:"#888"}}>날짜</label><br/><input type="date" value={txForm.date} onChange={e=>setTxForm({...txForm,date:e.target.value})} style={{border:"1px solid #e0e0e0",borderRadius:6,padding:"6px 10px",fontSize:13}}/></div>
+                <div style={{flex:1,minWidth:150}}><label style={{fontSize:11,color:"#888"}}>내역</label><br/><input value={txForm.desc} onChange={e=>setTxForm({...txForm,desc:e.target.value})} style={{width:"100%",border:"1px solid #e0e0e0",borderRadius:6,padding:"6px 10px",fontSize:13,boxSizing:"border-box"}}/></div>
+                <div><label style={{fontSize:11,color:"#888"}}>금액</label><br/><input type="number" value={txForm.amount} onChange={e=>setTxForm({...txForm,amount:e.target.value})} style={{width:120,border:"1px solid #e0e0e0",borderRadius:6,padding:"6px 10px",fontSize:13}}/></div>
+                <div><label style={{fontSize:11,color:"#888"}}>구분</label><br/><select value={txForm.type} onChange={e=>setTxForm({...txForm,type:e.target.value})} style={{border:"1px solid #e0e0e0",borderRadius:6,padding:"6px 10px",fontSize:13}}><option value="income">수입</option><option value="expense">지출</option></select></div>
+                <button onClick={addTx} style={{background:"#2d6a9f",color:"#fff",border:"none",borderRadius:7,padding:"8px 16px",cursor:"pointer",fontWeight:600,height:34}}>추가</button>
+                <button onClick={()=>setShowTxForm(false)} style={{background:"#f0f0f0",border:"none",borderRadius:7,padding:"8px 12px",cursor:"pointer",height:34}}>취소</button>
+              </div>
+            </div>
+          )}
+          <div style={{background:"#fff",borderRadius:10,boxShadow:"0 1px 4px rgba(0,0,0,.06)",overflow:"hidden"}}>
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
+              <thead><tr style={{background:"#f8f9fa"}}>{["날짜","내역","구분","금액","관리"].map((h,i)=><th key={i} style={{padding:"10px 14px",textAlign:i===3?"right":"left",color:"#666",fontWeight:600}}>{h}</th>)}</tr></thead>
+              <tbody>{[...curProject.transactions].reverse().map((t,i)=>(
+                {editingTx===t.id?(
+                  <tr key={t.id} style={{borderTop:"1px solid #f5f5f5",background:"#fff8e1"}}>
+                    <td style={{padding:"6px 8px"}}><input type="date" value={editTxForm.date} onChange={e=>setEditTxForm({...editTxForm,date:e.target.value})} style={{border:"1px solid #e0e0e0",borderRadius:5,padding:"4px 6px",fontSize:12,width:130}}/></td>
+                    <td style={{padding:"6px 8px"}}><input value={editTxForm.desc} onChange={e=>setEditTxForm({...editTxForm,desc:e.target.value})} style={{width:"100%",border:"1px solid #e0e0e0",borderRadius:5,padding:"4px 8px",fontSize:12,boxSizing:"border-box"}}/></td>
+                    <td style={{padding:"6px 8px"}}><select value={editTxForm.type} onChange={e=>setEditTxForm({...editTxForm,type:e.target.value})} style={{border:"1px solid #e0e0e0",borderRadius:5,padding:"4px 6px",fontSize:12}}><option value="income">수입</option><option value="expense">지출</option></select></td>
+                    <td style={{padding:"6px 8px",textAlign:"right"}}><input type="number" value={editTxForm.amount} onChange={e=>setEditTxForm({...editTxForm,amount:e.target.value})} style={{width:110,border:"1px solid #e0e0e0",borderRadius:5,padding:"4px 6px",fontSize:12,textAlign:"right"}}/></td>
+                    <td style={{padding:"6px 8px"}}>
+                      <div style={{display:"flex",gap:4}}>
+                        <button onClick={saveEditTx} style={{background:"#2d6a9f",color:"#fff",border:"none",borderRadius:5,padding:"4px 10px",cursor:"pointer",fontSize:11,fontWeight:700}}>저장</button>
+                        <button onClick={()=>setEditingTx(null)} style={{background:"#f0f0f0",border:"none",borderRadius:5,padding:"4px 8px",cursor:"pointer",fontSize:11}}>취소</button>
+                      </div>
+                    </td>
+                  </tr>
+                ):(
+                <tr key={t.id} style={{borderTop:"1px solid #f5f5f5",background:i%2?"#fafafa":"#fff"}}>
+                  <td style={{padding:"8px 14px",color:"#888"}}>{t.date}</td>
+                  <td style={{padding:"8px 14px"}}>{t.desc}</td>
+                  <td style={{padding:"8px 14px"}}><span style={{background:t.type==="income"?"#e8f5e9":"#fde8e8",color:t.type==="income"?"#27ae60":"#e74c3c",padding:"2px 8px",borderRadius:20,fontSize:11,fontWeight:600}}>{t.type==="income"?"수입":"지출"}</span></td>
+                  <td style={{padding:"8px 14px",textAlign:"right",color:t.type==="income"?"#27ae60":"#e74c3c",fontWeight:600}}>{t.type==="income"?"+":""}{(t.amount||0).toLocaleString()}</td>
+                  <td style={{padding:"8px 14px"}}>
+                    {isAdmin&&<div style={{display:"flex",gap:4}}>
+                      <button onClick={()=>{
+                        const absAmt=Math.abs(t.amount);
+                        setEditTxForm({date:t.date,desc:t.desc,amount:absAmt.toString(),type:t.type});
+                        setEditingTx(t.id);setShowTxForm(false);
+                      }} style={{background:"#e8f0fe",color:"#2d6a9f",border:"none",borderRadius:5,padding:"3px 8px",cursor:"pointer",fontSize:11}}>✏️ 수정</button>
+                      <button onClick={()=>{
+                        if(!setProjects){alert("🔒 관리자만 삭제 가능합니다.");return;}
+                        setProjects(projects.map(p=>p.id===selectedProject?{...p,transactions:p.transactions.filter(tx=>tx.id!==t.id)}:p));
+                      }} style={{background:"#fde8e8",color:"#c0392b",border:"none",borderRadius:5,padding:"3px 8px",cursor:"pointer",fontSize:11}}>🗑️ 삭제</button>
+                    </div>}
+                  </td>
+                </tr>
+                )}
+              ))}</tbody>
+            </table>
+            {curProject.transactions.length===0&&<div style={{textAlign:"center",padding:30,color:"#ccc",fontSize:13}}>거래 내역이 없습니다</div>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
+
+function App() {
+  const [isAdmin,setIsAdmin]=useState(null);
+  const [adminPw,setAdminPw]=useState(()=>localStorage.getItem("art_admin_pw")||"art3144");
+  const [showPwChange,setShowPwChange]=useState(false);
+  const [page,setPage]=useState("home");
+  const [members,setMembersState]=useState(initialMembers);
+  const [fees,setFeesState]=useState(initialFees);
+  const [feeYears,setFeeYearsState]=useState(["y2023","y2024","y2025","y2026"]);
+  const [yearLabels,setYearLabelsState]=useState({y2023:"2023년",y2024:"2024년",y2025:"2025년",y2026:"2026년"});
+  const [feeAmounts,setFeeAmountsState]=useState({y2023:100000,y2024:100000,y2025:100000,y2026:100000});
+  const [transactions,setTransactionsState]=useState(initialTransactions);
+  const [meetings,setMeetingsState]=useState(initialMeetings);
+  const [projects,setProjectsState]=useState(initialProjects);
+  const [recoveryTarget,setRecoveryTargetState]=useState(20000000);
+  const [schedules,setSchedulesState]=useState([]);
+  const [feePresets,setFeePresetsState]=useState([]);
+  const [notice,setNoticeState]=useState("");
+  const [intro,setIntroState]=useState({greeting:"",statute:"",orgImgUrl:"",chairName:"",chairPosition:""});
+  const [selectedProject,setSelectedProject]=useState(null);
+  const [dbReady,setDbReady]=useState(false);
+  const [saving,setSaving]=useState(false);
+  const skipSave=useRef(false);
+  const [menuOpen,setMenuOpen]=useState(false);
+  const [isMobile,setIsMobile]=useState(()=>window.innerWidth<=768);
+
+  useEffect(()=>{
+    const fn=()=>setIsMobile(window.innerWidth<=768);
+    window.addEventListener("resize",fn);
+    return ()=>window.removeEventListener("resize",fn);
+  },[]);
+
+  useEffect(()=>{
+    if(!window._fbOk) return;
+    const keys=["members","fees","feeYears","yearLabels","feeAmounts","transactions","meetings","projects","recoveryTarget","schedules","feePresets","notice","intro"];
+    const setters={
+      members:setMembersState, fees:setFeesState, feeYears:setFeeYearsState,
+      yearLabels:setYearLabelsState, feeAmounts:setFeeAmountsState,
+      transactions:setTransactionsState, meetings:setMeetingsState,
+      projects:setProjectsState, recoveryTarget:setRecoveryTargetState,
+      schedules:setSchedulesState, feePresets:setFeePresetsState,
+      notice:setNoticeState, intro:setIntroState,
+    };
+    const unsubs=keys.map(k=>subscribeFirestore(k,d=>{
+      skipSave.current=true;
+      if(k==="members"){
+        try{
+          const photos=JSON.parse(localStorage.getItem("memberPhotos")||"{}");
+          setMembersState((d||[]).map(m=>photos[m.id]?{...m,photoUrl:photos[m.id]}:m));
+        }catch(e){setMembersState(d);}
+      } else { setters[k](d); }
+      setTimeout(()=>{skipSave.current=false;},200);
+    }));
+    Promise.all(keys.map(k=>loadFromFirestore(k))).then(results=>{
+      results.forEach((d,i)=>{
+        if(d===null) return;
+        skipSave.current=true;
+        if(keys[i]==="members"){
+          try{
+            const photos=JSON.parse(localStorage.getItem("memberPhotos")||"{}");
+            setMembersState((d||[]).map(m=>photos[m.id]?{...m,photoUrl:photos[m.id]}:m));
+          }catch(e){setMembersState(d);}
+        } else { setters[keys[i]](d); }
+      });
+      setTimeout(()=>{skipSave.current=false; setDbReady(true);},300);
+    });
+    return ()=>unsubs.forEach(u=>u&&u());
+  },[]);
+
+  const saveKey=async(key,data)=>{
+    if(skipSave.current||!dbReady) return;
+    setSaving(true);
+    await saveToFirestore(key,data);
+    setSaving(false);
+  };
+
+  const setMembers=d=>{
+    setMembersState(d);
+    try{
+      const photos={};
+      const lean=d.map(m=>{ if(m.photoUrl) photos[m.id]=m.photoUrl; const {photoUrl,...rest}=m; return rest; });
+      if(Object.keys(photos).length>0) localStorage.setItem("memberPhotos",JSON.stringify({...JSON.parse(localStorage.getItem("memberPhotos")||"{}"), ...photos}));
+      saveKey("members",lean);
+    }catch(e){saveKey("members",d);}
+  };
+  const setFees=d=>{setFeesState(d);saveKey("fees",d);};
+  const setFeeYears=d=>{setFeeYearsState(d);saveKey("feeYears",d);};
+  const setYearLabels=d=>{setYearLabelsState(d);saveKey("yearLabels",d);};
+  const setFeeAmounts=d=>{setFeeAmountsState(d);saveKey("feeAmounts",d);};
+  const setTransactions=d=>{setTransactionsState(d);saveKey("transactions",d);};
+  const setMeetings=d=>{setMeetingsState(d);saveKey("meetings",d);};
+  const setProjects=d=>{setProjectsState(d);saveKey("projects",d);};
+  const setRecoveryTarget=d=>{setRecoveryTargetState(d);saveKey("recoveryTarget",d);};
+  const setSchedules=d=>{setSchedulesState(d);saveKey("schedules",d);};
+  const setFeePresets=d=>{setFeePresetsState(d);saveKey("feePresets",d);};
+  const setNotice=d=>{setNoticeState(d);saveKey("notice",d);};
+  const setIntro=d=>{setIntroState(d);saveKey("intro",d);};
+
+  const recoveryTotal=useMemo(()=>projects.reduce((sum,p)=>sum+Math.max(p.transactions.reduce((s,t)=>s+t.amount,0),0),0),[projects]);
+  const recoveryPct=Math.min(100,Math.round(recoveryTotal/recoveryTarget*100));
+
+  if(isAdmin===null) return <LoginPage onLogin={setIsAdmin} adminPw={adminPw}/>;
+
+  const navItems=[
+    {key:"home",icon:"🏠",label:"홈"},
+    {key:"intro",icon:"🎨",label:"협회소개"},
+    {key:"members",icon:"👥",label:"회원관리"},
+    {key:"fees",icon:"💰",label:"회비납부"},
+    {key:"entry",icon:"🎫",label:"가입비"},
+    {key:"bank",icon:"🏦",label:"통장내역"},
+    {key:"meetings",icon:"📋",label:"회의록"},
+    {key:"recovery",icon:"📊",label:"목표금액"},
+  ];
+
+  return (
+    <>
+    {showPwChange&&<PwChangeModal adminPw={adminPw} setAdminPw={setAdminPw} onClose={()=>setShowPwChange(false)}/>}
+    <div style={{fontFamily:"'Noto Sans KR',sans-serif",background:"#f0f2f5",minHeight:"100vh"}}>
+      <div style={{background:"linear-gradient(135deg,#1a3a5c,#2d6a9f)",color:"#fff",padding:"0 16px",display:"flex",alignItems:"center",justifyContent:"space-between",height:58,boxShadow:"0 2px 8px rgba(0,0,0,.2)",position:"sticky",top:0,zIndex:200}}>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <img src={LOGO} alt="로고" style={{height:38,objectFit:"contain",filter:"brightness(0) invert(1)"}}/>
+          <div>
+            <div style={{fontWeight:700,fontSize:14,letterSpacing:-.5}}>한국미술협회 부여지부</div>
+            <div style={{fontSize:10,opacity:.7,marginTop:-2}}>회원·재무 통합 관리시스템</div>
+          </div>
+        </div>
+        <div style={{display:isMobile?"none":"flex",gap:4,alignItems:"center"}}>
+          {navItems.map(n=>(
+            <button key={n.key} onClick={()=>{setPage(n.key);setSelectedProject(null);}}
+              style={{background:page===n.key?"rgba(255,255,255,.25)":"transparent",border:"none",color:"#fff",padding:"6px 10px",borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:page===n.key?700:400,display:"flex",alignItems:"center",gap:4}}>
+              <span>{n.icon}</span><span>{n.label}</span>
+            </button>
+          ))}
+          <SyncBadge saving={saving} dbReady={dbReady}/>
+          <div style={{padding:"4px 10px",background:isAdmin?"rgba(255,220,100,.25)":"rgba(255,255,255,.15)",borderRadius:20,fontSize:11,fontWeight:600,display:"flex",alignItems:"center",gap:4,border:"1px solid rgba(255,255,255,.3)"}}>
+            {isAdmin?<>👑 관리자</>:<>👁️ 열람전용</>}
+          </div>
+          {isAdmin&&<button onClick={()=>setShowPwChange(true)} style={{background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",padding:"5px 10px",borderRadius:20,cursor:"pointer",fontSize:11}}>🔑 비번변경</button>}
+          <button onClick={()=>{setIsAdmin(null);setPage("home");}} style={{background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",padding:"5px 10px",borderRadius:20,cursor:"pointer",fontSize:11}}>로그아웃</button>
+        </div>
+        <button onClick={()=>setMenuOpen(o=>!o)}
+          style={{display:isMobile?"flex":"none",background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",width:40,height:40,borderRadius:8,cursor:"pointer",fontSize:20,alignItems:"center",justifyContent:"center"}}>
+          {menuOpen?"✕":"☰"}
+        </button>
+      </div>
+      {menuOpen&&(
+        <div style={{display:isMobile?"flex":"none",flexDirection:"column",position:"fixed",top:58,left:0,right:0,background:"linear-gradient(135deg,#1a3a5c,#2d6a9f)",zIndex:199,boxShadow:"0 4px 12px rgba(0,0,0,.3)",padding:"8px 0 12px"}}>
+          {navItems.map(n=>(
+            <button key={n.key} onClick={()=>{setPage(n.key);setSelectedProject(null);setMenuOpen(false);}}
+              style={{width:"100%",background:page===n.key?"rgba(255,255,255,.2)":"transparent",border:"none",color:"#fff",padding:"13px 20px",cursor:"pointer",fontSize:15,fontWeight:page===n.key?700:400,display:"flex",alignItems:"center",gap:10}}>
+              <span style={{fontSize:18}}>{n.icon}</span><span>{n.label}</span>
+              {page===n.key&&<span style={{marginLeft:"auto",fontSize:12,opacity:.8}}>●</span>}
+            </button>
+          ))}
+          <div style={{borderTop:"1px solid rgba(255,255,255,.15)",margin:"8px 0"}}/>
+          <div style={{padding:"6px 20px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div style={{padding:"4px 12px",background:isAdmin?"rgba(255,220,100,.25)":"rgba(255,255,255,.15)",borderRadius:20,fontSize:12,fontWeight:600,color:"#fff",border:"1px solid rgba(255,255,255,.3)"}}>
+              {isAdmin?"👑 관리자":"👁️ 열람전용"}
+            </div>
+            <div style={{display:"flex",gap:8}}>
+              {isAdmin&&<button onClick={()=>{setShowPwChange(true);setMenuOpen(false);}} style={{background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",padding:"6px 12px",borderRadius:20,cursor:"pointer",fontSize:12}}>🔑 비번변경</button>}
+              <button onClick={()=>{setIsAdmin(null);setPage("home");setMenuOpen(false);}} style={{background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",padding:"6px 12px",borderRadius:20,cursor:"pointer",fontSize:12}}>로그아웃</button>
+            </div>
+          </div>
+        </div>
+      )}
+      <div style={{maxWidth:1100,margin:"0 auto",padding:"20px 16px"}}>
+        {page==="home"     && <HomePage members={members} transactions={transactions} meetings={meetings} recoveryTotal={recoveryTotal} recoveryTarget={recoveryTarget} recoveryPct={recoveryPct} projects={projects} setPage={setPage} setSelectedProject={setSelectedProject} isAdmin={isAdmin} schedules={schedules} setSchedules={isAdmin?setSchedules:null} notice={notice} setNotice={isAdmin?setNotice:null}/>}
+        {page==="intro"    && <IntroPage intro={intro} setIntro={isAdmin?setIntro:null} isAdmin={isAdmin}/>}
+        {page==="members"  && <MembersPage members={members} setMembers={isAdmin?setMembers:null} fees={fees} setFees={isAdmin?setFees:null} feeYears={feeYears} isAdmin={isAdmin}/>}
+        {page==="fees"     && <FeesPage fees={fees} setFees={isAdmin?setFees:null} feeYears={feeYears} setFeeYears={isAdmin?setFeeYears:null} yearLabels={yearLabels} setYearLabels={isAdmin?setYearLabels:null} feeAmounts={feeAmounts} setFeeAmounts={isAdmin?setFeeAmounts:null} transactions={transactions} setTransactions={isAdmin?setTransactions:null} members={members} setMembers={isAdmin?setMembers:null} isAdmin={isAdmin} feePresets={feePresets} setFeePresets={isAdmin?setFeePresets:null}/>}
+        {page==="entry"    && <EntryPage fees={fees} setFees={isAdmin?setFees:null} members={members} setMembers={isAdmin?setMembers:null} isAdmin={isAdmin}/>}
+        {page==="bank"     && <BankPage transactions={transactions} setTransactions={isAdmin?setTransactions:null} isAdmin={isAdmin} feePresets={feePresets} setFeePresets={isAdmin?setFeePresets:null} feeAmounts={feeAmounts}/>}
+        {page==="meetings" && <MeetingsPage meetings={meetings} setMeetings={isAdmin?setMeetings:null} members={members} isAdmin={isAdmin}/>}
+        {page==="recovery" && <RecoveryPage projects={projects} setProjects={isAdmin?setProjects:null} recoveryTarget={recoveryTarget} setRecoveryTarget={isAdmin?setRecoveryTarget:null} selectedProject={selectedProject} setSelectedProject={setSelectedProject} isAdmin={isAdmin}/>}
+      </div>
+    </div>
+    </>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App/>);
+</script>
+</body>
+</html>
