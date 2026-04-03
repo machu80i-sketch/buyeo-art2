@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>부여미협 갤러리 — Buyeo Art Gallery</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;600;700&family=Noto+Sans+KR:wght@300;400;500;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --gold:#b8974a;--gold-light:#d4b56a;
+  --dark:#0e0e0e;--dark2:#1a1a1a;
+  --gray:#888;--light:#f5f3ef;--white:#fff;--text:#222;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--light);color:var(--text);}
+::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:#eee;}::-webkit-scrollbar-thumb{background:var(--gold);border-radius:2px;}
+
+/* HEADER */
+header{position:sticky;top:0;z-index:100;background:rgba(14,14,14,.97);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:space-between;padding:0 40px;height:58px;border-bottom:1px solid rgba(184,151,74,.2);}
+.logo{text-decoration:none;}
+.logo .main{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;letter-spacing:2px;color:var(--gold-light);}
+.logo .sub{font-size:9px;color:rgba(255,255,255,.4);letter-spacing:3px;text-transform:uppercase;}
+nav{display:flex;align-items:center;gap:4px;}
+nav button{background:none;border:none;color:rgba(255,255,255,.6);font-size:13px;padding:7px 14px;cursor:pointer;border-radius:4px;transition:.2s;font-family:'Noto Sans KR',sans-serif;}
+nav button:hover{color:#fff;background:rgba(255,255,255,.08);}
+nav button.active{color:var(--gold-light);}
+.cart-btn{display:flex!important;align-items:center;gap:6px;background:rgba(184,151,74,.15)!important;border:1px solid rgba(184,151,74,.4)!important;color:var(--gold-light)!important;border-radius:20px!important;padding:6px 14px!important;}
+.cart-count{background:var(--gold);color:#fff;border-radius:50%;width:18px;height:18px;font-size:10px;display:flex;align-items:center;justify-content:center;font-weight:700;}
+.mob-btn{display:none;background:none;border:none;color:#fff;font-size:22px;cursor:pointer;}
+
+/* HERO - 슬라이드쇼 */
+.hero{position:relative;height:340px;overflow:hidden;background:var(--dark);}
+.slide{position:absolute;inset:0;opacity:0;transition:opacity 1s ease;display:flex;align-items:center;}
+.slide.active{opacity:1;}
+.slide-bg{position:absolute;inset:0;background-size:cover;background-position:center;filter:brightness(.45);}
+.slide-placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:100px;opacity:.08;}
+.slide-overlay{position:absolute;inset:0;background:linear-gradient(to right,rgba(0,0,0,.7) 0%,rgba(0,0,0,.2) 60%,transparent 100%);}
+.slide-content{position:relative;z-index:2;padding:0 60px;max-width:600px;}
+.slide-label{font-size:10px;color:var(--gold);letter-spacing:4px;text-transform:uppercase;margin-bottom:10px;}
+.slide-title{font-family:'Noto Serif KR',serif;font-size:clamp(24px,4vw,40px);font-weight:600;color:#fff;line-height:1.2;margin-bottom:8px;}
+.slide-artist{font-family:'Cormorant Garamond',serif;font-size:18px;color:rgba(255,255,255,.6);margin-bottom:16px;font-style:italic;}
+.slide-price{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--gold-light);font-weight:600;}
+.slide-btn{display:inline-block;margin-top:16px;padding:9px 24px;border:1px solid rgba(184,151,74,.6);color:var(--gold-light);font-size:12px;cursor:pointer;border-radius:2px;background:rgba(184,151,74,.1);letter-spacing:1px;transition:.2s;}
+.slide-btn:hover{background:rgba(184,151,74,.25);}
+
+/* 슬라이드 도트 */
+.slide-dots{position:absolute;bottom:16px;left:60px;display:flex;gap:6px;z-index:3;}
+.dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.3);cursor:pointer;transition:.3s;}
+.dot.active{background:var(--gold);width:20px;border-radius:3px;}
+
+/* 히어로 없을때 */
+.hero-empty{height:160px;background:var(--dark);display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.hero-empty .main{font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:300;color:var(--white);letter-spacing:2px;}
+.hero-empty .sub{font-size:11px;color:rgba(255,255,255,.35);letter-spacing:4px;text-transform:uppercase;margin-top:6px;}
+
+/* FILTER */
+.filter-bar{background:var(--white);padding:0 40px;border-bottom:1px solid #e8e0d4;position:sticky;top:58px;z-index:90;box-shadow:0 2px 8px rgba(0,0,0,.05);display:flex;align-items:center;gap:0;overflow-x:auto;}
+.filter-bar::-webkit-scrollbar{height:0;}
+.filter-btn{padding:14px 20px;border:none;border-bottom:2px solid transparent;background:transparent;font-size:13px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;color:#888;white-space:nowrap;transition:.2s;letter-spacing:.3px;}
+.filter-btn:hover{color:var(--text);}
+.filter-btn.active{color:var(--gold);border-bottom-color:var(--gold);font-weight:600;}
+.filter-right{margin-left:auto;display:flex;align-items:center;gap:8px;padding:8px 0;}
+.filter-count{font-size:11px;color:#aaa;white-space:nowrap;}
+
+/* GALLERY */
+.gallery-wrap{padding:32px 40px;max-width:1300px;margin:0 auto;}
+.gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:24px;}
+.artwork-card{background:#fff;border-radius:3px;overflow:hidden;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,.06);transition:transform .3s,box-shadow .3s;}
+.artwork-card:hover{transform:translateY(-5px);box-shadow:0 10px 32px rgba(0,0,0,.13);}
+.card-img{position:relative;aspect-ratio:4/3;overflow:hidden;background:#f0ece4;}
+.card-img img{width:100%;height:100%;object-fit:cover;transition:transform .5s;}
+.artwork-card:hover .card-img img{transform:scale(1.05);}
+.card-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:44px;color:#c8bfa8;}
+.card-badge{position:absolute;top:10px;right:10px;background:rgba(14,14,14,.72);backdrop-filter:blur(4px);color:var(--gold-light);font-size:9px;letter-spacing:1px;padding:3px 9px;border-radius:2px;font-weight:600;}
+.card-badge.nfs{color:#aaa;}
+.card-info{padding:14px 16px 16px;}
+.card-title{font-family:'Noto Serif KR',serif;font-size:14px;font-weight:600;color:var(--text);margin-bottom:3px;}
+.card-artist{font-size:11px;color:var(--gray);margin-bottom:8px;}
+.card-meta{display:flex;justify-content:space-between;align-items:center;}
+.card-size{font-size:10px;color:#bbb;}
+.card-price{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;color:var(--gold);}
+.card-price.nfs{font-size:11px;color:#bbb;font-family:'Noto Sans KR',sans-serif;}
+
+/* 스크롤 애니메이션 */
+.artwork-card{opacity:0;transform:translateY(24px);transition:opacity .5s ease,transform .5s ease,box-shadow .3s;}
+.artwork-card.visible{opacity:1;transform:translateY(0);}
+.artwork-card.visible:hover{transform:translateY(-5px);}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .2s ease;}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+.modal{background:#fff;border-radius:3px;width:100%;max-width:880px;max-height:92vh;overflow-y:auto;display:flex;flex-direction:column;animation:slideUp .25s ease;}
+@keyframes slideUp{from{opacity:0;transform:translateY(24px);}to{opacity:1;transform:translateY(0);}}
+.modal-header{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;border-bottom:1px solid #e8e0d4;background:var(--dark);}
+.modal-header-title{font-family:'Cormorant Garamond',serif;font-size:11px;color:var(--gold);letter-spacing:4px;text-transform:uppercase;}
+.modal-close{background:none;border:none;color:rgba(255,255,255,.4);font-size:22px;cursor:pointer;}
+.modal-close:hover{color:#fff;}
+.modal-body{display:grid;grid-template-columns:1.3fr 1fr;gap:0;}
+.modal-img{background:#f0ece4;display:flex;align-items:center;justify-content:center;min-height:360px;}
+.modal-img img{width:100%;height:100%;object-fit:contain;max-height:480px;}
+.modal-img-ph{font-size:72px;color:#c8bfa8;}
+.modal-detail{padding:32px 28px;display:flex;flex-direction:column;border-left:1px solid #e8e0d4;}
+.modal-title{font-family:'Noto Serif KR',serif;font-size:24px;font-weight:600;color:var(--text);margin-bottom:4px;}
+.modal-artist{font-size:13px;color:var(--gold);letter-spacing:1px;margin-bottom:20px;font-weight:500;}
+.spec-row{display:flex;gap:0;margin-bottom:7px;border-bottom:1px solid #f5f0e8;padding-bottom:7px;}
+.spec-label{font-size:10px;color:#aaa;letter-spacing:2px;text-transform:uppercase;width:70px;flex-shrink:0;padding-top:2px;}
+.spec-value{font-size:13px;color:#444;}
+.mdivider{height:1px;background:#e8e0d4;margin:18px 0;}
+.price-label{font-size:10px;color:#aaa;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;}
+.price-value{font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:600;color:var(--gold);}
+.price-value.nfs{font-size:15px;color:#888;font-family:'Noto Sans KR',sans-serif;}
+.modal-actions{display:flex;flex-direction:column;gap:9px;margin-top:auto;padding-top:20px;}
+.btn-cart{padding:13px;border-radius:2px;border:none;cursor:pointer;font-size:13px;font-weight:600;font-family:'Noto Sans KR',sans-serif;letter-spacing:.5px;transition:.2s;background:var(--gold);color:#fff;}
+.btn-cart:hover{background:#a07a30;}
+.btn-added{background:#27ae60!important;}
+.btn-inquiry{padding:12px;border-radius:2px;border:1.5px solid var(--gold);background:transparent;color:var(--gold);font-size:12px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;text-decoration:none;display:block;text-align:center;transition:.2s;}
+.btn-inquiry:hover{background:rgba(184,151,74,.08);}
+
+/* CART */
+.cart-page{max-width:860px;margin:0 auto;padding:48px 40px;}
+.cart-title{font-family:'Cormorant Garamond',serif;font-size:38px;font-weight:300;margin-bottom:6px;}
+.cart-sub{font-size:12px;color:var(--gray);margin-bottom:36px;letter-spacing:.5px;}
+.cart-empty{text-align:center;padding:72px 0;color:var(--gray);}
+.cart-item{display:flex;gap:18px;padding:20px 0;border-bottom:1px solid #e8e0d4;align-items:center;}
+.cart-item-img{width:84px;height:66px;object-fit:cover;border-radius:2px;background:#f0ece4;flex-shrink:0;}
+.cart-item-ph{width:84px;height:66px;background:#f0ece4;border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#c8bfa8;flex-shrink:0;}
+.cart-item-info{flex:1;}
+.cart-item-title{font-family:'Noto Serif KR',serif;font-size:15px;font-weight:600;margin-bottom:3px;}
+.cart-item-artist{font-size:11px;color:var(--gray);}
+.cart-item-price{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:var(--gold);margin-right:14px;}
+.cart-item-remove{background:none;border:none;color:#ccc;font-size:18px;cursor:pointer;}
+.cart-item-remove:hover{color:#e74c3c;}
+.cart-summary{margin-top:28px;padding:24px;background:var(--dark);border-radius:3px;color:#fff;}
+.summary-row{display:flex;justify-content:space-between;margin-bottom:10px;font-size:13px;}
+.summary-total{display:flex;justify-content:space-between;font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:var(--gold-light);margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.1);}
+.btn-checkout{width:100%;margin-top:16px;padding:16px;background:var(--gold);color:#fff;border:none;border-radius:2px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
+.btn-checkout:hover{background:#a07a30;}
+.inquiry-box{margin-top:18px;background:#f8f5ef;border-radius:3px;padding:18px;text-align:center;border:1px solid #e8e0d4;}
+.inquiry-box p{font-size:12px;color:#666;margin-bottom:10px;line-height:1.8;}
+.inquiry-phone{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:var(--gold);display:block;margin-bottom:3px;}
+.inquiry-name{font-size:11px;color:#999;}
+
+/* ABOUT */
+.about-page{max-width:760px;margin:0 auto;padding:56px 40px;}
+.about-title{font-family:'Cormorant Garamond',serif;font-size:44px;font-weight:300;margin-bottom:6px;}
+.about-sub{font-size:12px;color:var(--gold);letter-spacing:3px;text-transform:uppercase;margin-bottom:44px;}
+.about-section{margin-bottom:44px;}
+.about-section h3{font-family:'Noto Serif KR',serif;font-size:17px;font-weight:600;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #e8e0d4;}
+.about-section p{font-size:13px;color:#555;line-height:2;margin-bottom:10px;}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;}
+.info-item{background:#f8f5ef;padding:18px;border-radius:3px;border-left:3px solid var(--gold);}
+.info-item .label{font-size:10px;color:var(--gray);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px;}
+.info-item .value{font-size:13px;color:var(--text);font-weight:500;line-height:1.6;}
+
+/* ADMIN */
+.admin-section{max-width:860px;margin:0 auto;padding:44px 40px;}
+.admin-form{background:#fff;border-radius:3px;padding:28px;box-shadow:0 2px 12px rgba(0,0,0,.06);margin-bottom:28px;}
+.admin-form h3{font-family:'Noto Serif KR',serif;font-size:17px;margin-bottom:22px;color:var(--text);}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.form-group{display:flex;flex-direction:column;gap:5px;}
+.form-group.full{grid-column:1/-1;}
+.form-group label{font-size:10px;color:var(--gray);letter-spacing:2px;text-transform:uppercase;}
+.form-group input,.form-group select,.form-group textarea{border:1.5px solid #e0d8cc;border-radius:2px;padding:9px 11px;font-size:13px;font-family:'Noto Sans KR',sans-serif;background:#fafafa;transition:.2s;}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--gold);outline:none;background:#fff;}
+.form-group textarea{min-height:72px;resize:vertical;}
+.btn-submit{margin-top:18px;padding:11px 28px;background:var(--gold);color:#fff;border:none;border-radius:2px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
+.btn-submit:hover{background:#a07a30;}
+.admin-list{background:#fff;border-radius:3px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06);}
+.admin-item{display:flex;align-items:center;gap:14px;padding:14px 18px;border-bottom:1px solid #f0ece4;}
+.admin-item img{width:56px;height:44px;object-fit:cover;border-radius:2px;}
+.admin-item-info{flex:1;font-size:13px;font-weight:500;}
+.admin-item-sub{font-size:11px;color:var(--gray);}
+.btn-del{background:#fde8e8;color:#c0392b;border:none;border-radius:2px;padding:5px 10px;cursor:pointer;font-size:11px;}
+
+/* FOOTER */
+footer{background:var(--dark2);color:rgba(255,255,255,.35);text-align:center;padding:28px 40px;font-size:11px;letter-spacing:.5px;border-top:1px solid rgba(184,151,74,.12);}
+footer strong{color:var(--gold-light);display:block;font-family:'Cormorant Garamond',serif;font-size:15px;margin-bottom:7px;}
+
+@media(max-width:768px){
+  header{padding:0 16px;}
+  nav:not(.mob-nav){display:none;}
+  .mob-btn{display:block;}
+  .mob-nav{position:fixed;top:58px;left:0;right:0;background:var(--dark2);z-index:99;flex-direction:column;gap:0;padding:6px 0;}
+  .mob-nav button{width:100%;text-align:left;padding:13px 20px;border-radius:0;font-size:14px;}
+  .hero{height:220px;}
+  .slide-content{padding:0 24px;}
+  .filter-bar{padding:0 16px;}
+  .gallery-wrap{padding:20px 16px;}
+  .gallery-grid{grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:14px;}
+  .modal-body{grid-template-columns:1fr;}
+  .modal-detail{padding:20px 18px;border-left:none;border-top:1px solid #e8e0d4;}
+  .cart-page,.about-page,.admin-section{padding:28px 16px;}
+  .info-grid,.form-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<header>
+  <a class="logo" href="#" onclick="navigate('home');return false;">
+    <div class="main">부여미협 갤러리</div>
+    <div class="sub">Buyeo Art Gallery</div>
+  </a>
+  <nav id="main-nav">
+    <button onclick="navigate('home')" class="active" data-page="home">갤러리</button>
+    <button onclick="navigate('about')" data-page="about">협회소개</button>
+    <button onclick="navigate('admin')" data-page="admin" id="admin-nav-btn" style="display:none">작품관리</button>
+    <button onclick="navigate('cart')" class="cart-btn" data-page="cart">🛒 <span class="cart-count" id="cart-count">0</span></button>
+  </nav>
+  <button class="mob-btn" onclick="toggleMob()">☰</button>
+</header>
+<nav id="mob-nav" style="display:none" class="mob-nav">
+  <button onclick="navigate('home');closeMob()">갤러리</button>
+  <button onclick="navigate('about');closeMob()">협회소개</button>
+  <button onclick="navigate('admin');closeMob()" id="admin-mob-btn" style="display:none">작품관리</button>
+  <button onclick="navigate('cart');closeMob()">🛒 장바구니 (<span id="cart-count2">0</span>)</button>
+</nav>
+
+<div id="app"></div>
+
+<footer>
+  <strong>한국미술협회 부여지부 갤러리</strong>
+  충남 부여군 수북로 14-16 &nbsp;|&nbsp; 판매문의: 010-5400-3144 (사무장)<br/>
+  © 2025 Buyeo Art Gallery. All rights reserved.
+</footer>
+
+<script>
+// ═══ STATE ═══
+let artworks = JSON.parse(localStorage.getItem('gallery_artworks')||'[]');
+let cart = JSON.parse(localStorage.getItem('gallery_cart')||'[]');
+let currentPage = 'home';
+let currentFilter = 'all';
+let selectedArtwork = null;
+let isAdmin = sessionStorage.getItem('gallery_admin')==='1';
+let mobOpen = false;
+let slideIndex = 0;
+let slideTimer = null;
+let slideArtworks = [];
+
+if(artworks.length===0){
+  artworks=[
+    {id:1,title:'고요한 아침',artist:'민경희',year:'2024',size:'60×80cm',medium:'유화',price:850000,forSale:true,category:'서양화',imgUrl:'',desc:'부여의 고요한 아침을 담은 작품입니다.'},
+    {id:2,title:'백마강의 노을',artist:'홍정희',year:'2024',size:'80×100cm',medium:'아크릴',price:1200000,forSale:true,category:'서양화',imgUrl:'',desc:''},
+    {id:3,title:'연꽃의 향기',artist:'이란순',year:'2023',size:'50×50cm',medium:'수묵채색',price:0,forSale:false,category:'한국화',imgUrl:'',desc:'비매품 작품입니다.'},
+    {id:4,title:'부여의 봄',artist:'장현정',year:'2024',size:'100×80cm',medium:'한지에 수묵',price:1500000,forSale:true,category:'한국화',imgUrl:'',desc:''},
+    {id:5,title:'궁남지 풍경',artist:'송현호',year:'2023',size:'72×90cm',medium:'수채화',price:680000,forSale:true,category:'수채화',imgUrl:'',desc:''},
+    {id:6,title:'가을 산하',artist:'황경남',year:'2024',size:'45×60cm',medium:'유화',price:920000,forSale:true,category:'서양화',imgUrl:'',desc:''},
+  ];
+  localStorage.setItem('gallery_artworks',JSON.stringify(artworks));
+}
+
+function saveArtworks(){localStorage.setItem('gallery_artworks',JSON.stringify(artworks));}
+function saveCart(){localStorage.setItem('gallery_cart',JSON.stringify(cart));updateCount();}
+function updateCount(){
+  document.getElementById('cart-count').textContent=cart.length;
+  document.getElementById('cart-count2').textContent=cart.length;
+}
+function navigate(p){
+  currentPage=p;
+  document.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===p));
+  stopSlide();
+  render();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function toggleMob(){mobOpen=!mobOpen;document.getElementById('mob-nav').style.display=mobOpen?'flex':'none';}
+function closeMob(){mobOpen=false;document.getElementById('mob-nav').style.display='none';}
+function setAdmin(v){isAdmin=v;sessionStorage.setItem('gallery_admin',v?'1':'');document.getElementById('admin-nav-btn').style.display=v?'':'none';document.getElementById('admin-mob-btn').style.display=v?'':'none';render();}
+
+// ═══ SLIDESHOW ═══
+function startSlide(){
+  stopSlide();
+  const slides=document.querySelectorAll('.slide');
+  if(slides.length<=1)return;
+  slideTimer=setInterval(()=>{
+    slides[slideIndex].classList.remove('active');
+    slideIndex=(slideIndex+1)%slides.length;
+    slides[slideIndex].classList.add('active');
+    updateDots();
+  },4000);
+}
+function stopSlide(){if(slideTimer){clearInterval(slideTimer);slideTimer=null;}}
+function goSlide(i){
+  const slides=document.querySelectorAll('.slide');
+  if(!slides.length)return;
+  slides[slideIndex].classList.remove('active');
+  slideIndex=i;
+  slides[slideIndex].classList.add('active');
+  updateDots();
+  stopSlide();startSlide();
+}
+function updateDots(){
+  document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',i===slideIndex));
+}
+
+// ═══ SCROLL ANIMATION ═══
+function initScrollAnim(){
+  const cards=document.querySelectorAll('.artwork-card');
+  if(!cards.length)return;
+  const io=new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');io.unobserve(e.target);}});
+  },{threshold:0.1,rootMargin:'0px 0px -40px 0px'});
+  cards.forEach((c,i)=>{c.style.transitionDelay=(i%4)*0.07+'s';io.observe(c);});
+}
+
+// ═══ RENDER ═══
+function render(){
+  const app=document.getElementById('app');
+  if(currentPage==='home')app.innerHTML=renderHome();
+  else if(currentPage==='cart')app.innerHTML=renderCart();
+  else if(currentPage==='about')app.innerHTML=renderAbout();
+  else if(currentPage==='admin')app.innerHTML=renderAdmin();
+  updateCount();
+  if(currentPage==='home'){
+    slideIndex=0;
+    setTimeout(()=>{
+      const slides=document.querySelectorAll('.slide');
+      if(slides[0])slides[0].classList.add('active');
+      updateDots();
+      startSlide();
+      initScrollAnim();
+    },50);
+  }
+}
+
+// ─── HOME ───
+function renderHome(){
+  const cats=['all','한국화','서양화','수채화','서예','공예','판화','조각','기타'];
+  const usedCats=['all',...new Set(artworks.map(a=>a.category).filter(Boolean))];
+  const showCats=cats.filter(c=>usedCats.includes(c));
+
+  const filtered=currentFilter==='all'?artworks:artworks.filter(a=>a.category===currentFilter);
+  const sorted=[...filtered].sort((a,b)=>b.id-a.id);
+
+  // 슬라이드: 최근 5개 (이미지 있는 것 우선, 없으면 전체)
+  const withImg=artworks.filter(a=>a.imgUrl).slice().sort((a,b)=>b.id-a.id).slice(0,5);
+  const slideList=withImg.length>=2?withImg:[...artworks].sort((a,b)=>b.id-a.id).slice(0,5);
+  slideArtworks=slideList;
+
+  const slidesHtml=slideList.length>0?slideList.map((a,i)=>`
+    <div class="slide" data-idx="${i}">
+      ${a.imgUrl?`<div class="slide-bg" style="background-image:url('${a.imgUrl}')"></div>`:`<div class="slide-placeholder">🖼️</div>`}
+      <div class="slide-overlay"></div>
+      <div class="slide-content">
+        <div class="slide-label">${a.category||'작품'} · ${a.year}</div>
+        <div class="slide-title">${a.title}</div>
+        <div class="slide-artist">${a.artist}</div>
+        ${a.forSale?`<div class="slide-price">${a.price.toLocaleString()}원</div>`:''}
+        <div class="slide-btn" onclick="openArtwork(${a.id})">작품 보기 →</div>
+      </div>
+    </div>
+  `).join(''):`<div class="slide"><div class="slide-placeholder">🖼️</div></div>`;
+
+  const dotsHtml=slideList.length>1?`<div class="slide-dots">${slideList.map((_,i)=>`<div class="dot${i===0?' active':''}" onclick="goSlide(${i})"></div>`).join('')}</div>`:'';
+
+  const heroHtml=artworks.length>0
+    ?`<div class="hero">${slidesHtml}${dotsHtml}</div>`
+    :`<div class="hero-empty"><div class="main">부여미협 갤러리</div><div class="sub">Buyeo Art Gallery</div></div>`;
+
+  const cards=sorted.map(a=>`
+    <div class="artwork-card" onclick="openArtwork(${a.id})">
+      <div class="card-img">
+        ${a.imgUrl?`<img src="${a.imgUrl}" alt="${a.title}" loading="lazy"/>`:`<div class="card-ph">🖼️</div>`}
+        <div class="card-badge${!a.forSale?' nfs':''}">${a.forSale?'판매중':'비매품'}</div>
+      </div>
+      <div class="card-info">
+        <div class="card-title">${a.title}</div>
+        <div class="card-artist">${a.artist} · ${a.year}</div>
+        <div class="card-meta">
+          <span class="card-size">${a.size}</span>
+          ${a.forSale?`<span class="card-price">${a.price.toLocaleString()}원</span>`:`<span class="card-price nfs">비매품</span>`}
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  return `
+    ${heroHtml}
+    <div class="filter-bar">
+      ${showCats.map(c=>`<button class="filter-btn${currentFilter===c?' active':''}" onclick="setFilter('${c}')">${c==='all'?'전체':c}</button>`).join('')}
+      <div class="filter-right">
+        <span class="filter-count">${sorted.length}점</span>
+        ${!isAdmin?`<button style="background:none;border:1px solid #ddd;border-radius:16px;padding:4px 12px;font-size:10px;cursor:pointer;color:#aaa;" onclick="promptAdmin()">관리자</button>`:`<button style="background:none;border:1px solid #e74c3c;border-radius:16px;padding:4px 12px;font-size:10px;cursor:pointer;color:#e74c3c;" onclick="setAdmin(false)">로그아웃</button>`}
+      </div>
+    </div>
+    <div class="gallery-wrap">
+      ${sorted.length===0?'<div style="text-align:center;padding:72px;color:#aaa;">등록된 작품이 없습니다</div>':`<div class="gallery-grid">${cards}</div>`}
+    </div>
+    ${renderModal()}
+  `;
+}
+
+function setFilter(f){currentFilter=f;stopSlide();render();}
+
+function renderModal(){
+  if(!selectedArtwork)return'';
+  const a=selectedArtwork;
+  const inCart=cart.some(c=>c.id===a.id);
+  return`<div class="modal-overlay" onclick="closeModal(event)"><div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header"><span class="modal-header-title">Artwork Detail</span><button class="modal-close" onclick="closeArtwork()">✕</button></div>
+    <div class="modal-body">
+      <div class="modal-img">${a.imgUrl?`<img src="${a.imgUrl}" alt="${a.title}"/>`:`<div class="modal-img-ph">🖼️</div>`}</div>
+      <div class="modal-detail">
+        <div>
+          <div class="modal-title">${a.title}</div>
+          <div class="modal-artist">${a.artist}</div>
+          <div>${[['연도',a.year],['크기',a.size],['재료',a.medium||'-'],['분류',a.category||'-']].map(([l,v])=>`<div class="spec-row"><span class="spec-label">${l}</span><span class="spec-value">${v}</span></div>`).join('')}</div>
+          ${a.desc?`<div style="margin-top:10px;font-size:12px;color:#666;line-height:1.8;">${a.desc}</div>`:''}
+        </div>
+        <div class="mdivider"></div>
+        <div><div class="price-label">가격</div>
+          ${a.forSale?`<div class="price-value">${a.price.toLocaleString()}<span style="font-size:16px;font-weight:400;color:#888;margin-left:4px">원</span></div>`:`<div class="price-value nfs">비매품 작품입니다</div>`}
+        </div>
+        <div class="modal-actions">
+          ${a.forSale?`<button class="btn-cart${inCart?' btn-added':''}" onclick="toggleCart(${a.id})">${inCart?'✓ 장바구니에 담김':'장바구니에 담기'}</button>`:'' }
+          <a href="tel:010-5400-3144" class="btn-inquiry">📞 구매 문의하기</a>
+          <div style="font-size:10px;color:#aaa;text-align:center;letter-spacing:.3px;">010-5400-3144 · 한국미술협회 부여지부 사무장</div>
+        </div>
+      </div>
+    </div>
+  </div></div>`;
+}
+
+function openArtwork(id){selectedArtwork=artworks.find(a=>a.id===id);stopSlide();render();setTimeout(()=>initScrollAnim(),50);}
+function closeArtwork(){selectedArtwork=null;render();setTimeout(()=>{initScrollAnim();startSlide();},50);}
+function closeModal(e){if(e.target.classList.contains('modal-overlay')){selectedArtwork=null;render();setTimeout(()=>{initScrollAnim();startSlide();},50);}}
+function toggleCart(id){
+  const a=artworks.find(x=>x.id===id);if(!a||!a.forSale)return;
+  const idx=cart.findIndex(c=>c.id===id);
+  if(idx>=0)cart.splice(idx,1);else cart.push({id:a.id,title:a.title,artist:a.artist,price:a.price,imgUrl:a.imgUrl});
+  saveCart();selectedArtwork=a;render();setTimeout(()=>initScrollAnim(),50);
+}
+
+// ─── CART ───
+function renderCart(){
+  if(cart.length===0)return`<div class="cart-page"><div class="cart-title">장바구니</div><div class="cart-empty"><div style="font-size:56px;margin-bottom:14px;opacity:.35">🛒</div><div>담긴 작품이 없습니다</div><br/><button onclick="navigate('home')" style="background:var(--gold);color:#fff;border:none;border-radius:2px;padding:11px 26px;cursor:pointer;font-size:13px;font-family:'Noto Sans KR',sans-serif;">갤러리 둘러보기</button></div></div>`;
+  const total=cart.reduce((s,c)=>s+c.price,0);
+  return`<div class="cart-page"><div class="cart-title">장바구니</div><div class="cart-sub">${cart.length}점의 작품이 담겨 있습니다</div>
+    ${cart.map(c=>`<div class="cart-item">${c.imgUrl?`<img class="cart-item-img" src="${c.imgUrl}"/>`:`<div class="cart-item-ph">🖼️</div>`}<div class="cart-item-info"><div class="cart-item-title">${c.title}</div><div class="cart-item-artist">${c.artist}</div></div><span class="cart-item-price">${c.price.toLocaleString()}원</span><button class="cart-item-remove" onclick="removeCart(${c.id})">✕</button></div>`).join('')}
+    <div class="cart-summary"><div class="summary-row"><span>작품 수</span><span>${cart.length}점</span></div><div class="summary-total"><span>합계</span><span>${total.toLocaleString()}원</span></div></div>
+    <div class="inquiry-box"><p>결제는 사무장에게 직접 문의해 주세요.<br/>작품 배송 및 픽업 방법도 안내해 드립니다.</p><a href="tel:010-5400-3144" class="inquiry-phone">📞 010-5400-3144</a><div class="inquiry-name">한국미술협회 부여지부 사무장</div></div>
+    <button class="btn-checkout" onclick="clearCart()">🗑️ 장바구니 비우기</button>
+  </div>`;
+}
+function removeCart(id){cart=cart.filter(c=>c.id!==id);saveCart();render();}
+function clearCart(){if(confirm('장바구니를 비울까요?')){cart=[];saveCart();render();}}
+
+// ─── ABOUT ───
+function renderAbout(){return`<div class="about-page"><div class="about-title">협회 소개</div><div class="about-sub">About Us</div>
+  <div class="about-section"><h3>한국미술협회 부여지부</h3><p>한국미술협회 부여지부는 충청남도 부여 지역의 미술 발전과 회원들의 창작 활동 지원을 위해 설립된 단체입니다.</p><p>지역 예술인들의 작품을 알리고, 예술 문화 저변 확대를 위해 전시회, 강습회 등 다양한 활동을 펼치고 있습니다.</p></div>
+  <div class="about-section"><h3>갤러리 안내</h3><p>본 갤러리는 부여지부 회원들의 작품을 온라인으로 전시하고 판매하는 공간입니다.</p>
+    <div class="info-grid">
+      <div class="info-item"><div class="label">주소</div><div class="value">충남 부여군 수북로 14-16</div></div>
+      <div class="info-item"><div class="label">판매 문의</div><div class="value">010-5400-3144<br/>한국미술협회 부여지부 사무장</div></div>
+      <div class="info-item"><div class="label">운영</div><div class="value">한국미술협회 부여지부</div></div>
+      <div class="info-item"><div class="label">전시 작품</div><div class="value">${artworks.length}점 전시 중</div></div>
+    </div>
+  </div>
+</div>`;}
+
+// ─── ADMIN ───
+function promptAdmin(){const pw=prompt('관리자 비밀번호:');if(pw==='art3144'){setAdmin(true);navigate('admin');}else if(pw!==null)alert('비밀번호가 틀렸습니다.');}
+function renderAdmin(){
+  if(!isAdmin)return`<div style="text-align:center;padding:72px;color:#aaa;"><div style="font-size:44px;margin-bottom:14px;">🔒</div><div>관리자만 접근 가능합니다.</div></div>`;
+  return`<div class="admin-section">
+    <h2 style="font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:300;margin-bottom:28px;">작품 관리</h2>
+    <div class="admin-form"><h3>➕ 작품 등록</h3>
+      <div class="form-grid">
+        <div class="form-group"><label>작품명 *</label><input id="f-title" placeholder="작품명"/></div>
+        <div class="form-group"><label>작가명 *</label><input id="f-artist" placeholder="작가명"/></div>
+        <div class="form-group"><label>제작연도</label><input id="f-year" placeholder="2024"/></div>
+        <div class="form-group"><label>크기</label><input id="f-size" placeholder="60×80cm"/></div>
+        <div class="form-group"><label>재료</label><input id="f-medium" placeholder="유화, 수채화..."/></div>
+        <div class="form-group"><label>분류</label>
+          <select id="f-category">
+            <option value="한국화">한국화</option><option value="서양화">서양화</option>
+            <option value="수채화">수채화</option><option value="서예">서예</option>
+            <option value="공예">공예</option><option value="판화">판화</option>
+            <option value="조각">조각</option><option value="기타">기타</option>
+          </select>
+        </div>
+        <div class="form-group"><label>판매여부</label><select id="f-forsale"><option value="1">판매중</option><option value="0">비매품</option></select></div>
+        <div class="form-group"><label>가격 (원)</label><input id="f-price" type="number" placeholder="500000"/></div>
+        <div class="form-group full"><label>작품 설명</label><textarea id="f-desc" placeholder="작품에 대한 설명"></textarea></div>
+        <div class="form-group full"><label>작품 사진</label>
+          <input type="file" accept="image/*" id="f-img" onchange="previewImg(event)"/>
+          <img id="f-preview" style="display:none;max-height:180px;margin-top:8px;border-radius:3px;object-fit:contain;"/>
+        </div>
+      </div>
+      <button class="btn-submit" onclick="addArtwork()">작품 등록하기</button>
+    </div>
+    <div class="admin-form"><h3>📋 등록된 작품 (${artworks.length}점)</h3>
+      <div class="admin-list">${artworks.length===0?'<div style="padding:36px;text-align:center;color:#aaa;">등록된 작품이 없습니다</div>':
+        artworks.sort((a,b)=>b.id-a.id).map(a=>`<div class="admin-item">${a.imgUrl?`<img src="${a.imgUrl}"/>`:`<div style="width:56px;height:44px;background:#f0ece4;border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:18px;color:#c8bfa8;">🖼️</div>`}<div class="admin-item-info">${a.title}<div class="admin-item-sub">${a.artist} · ${a.category} · ${a.forSale?a.price.toLocaleString()+'원':'비매품'}</div></div><button class="btn-del" onclick="deleteArtwork(${a.id})">삭제</button></div>`).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+function previewImg(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{const img=new Image();img.onload=()=>{const mw=1400,mh=1000,ratio=Math.min(mw/img.width,mh/img.height,1);const w=Math.round(img.width*ratio),h=Math.round(img.height*ratio);const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);const url=c.toDataURL('image/jpeg',0.88);document.getElementById('f-preview').src=url;document.getElementById('f-preview').style.display='block';};img.src=ev.target.result;};r.readAsDataURL(f);}
+function addArtwork(){
+  const title=document.getElementById('f-title').value.trim();
+  const artist=document.getElementById('f-artist').value.trim();
+  if(!title||!artist){alert('작품명과 작가명은 필수입니다.');return;}
+  const imgEl=document.getElementById('f-preview');
+  artworks.unshift({id:Date.now(),title,artist,year:document.getElementById('f-year').value||new Date().getFullYear().toString(),size:document.getElementById('f-size').value,medium:document.getElementById('f-medium').value,category:document.getElementById('f-category').value,forSale:document.getElementById('f-forsale').value==='1',price:parseInt(document.getElementById('f-price').value)||0,desc:document.getElementById('f-desc').value,imgUrl:imgEl.style.display!=='none'?imgEl.src:''});
+  saveArtworks();alert('작품이 등록되었습니다!');render();
+}
+function deleteArtwork(id){if(confirm('이 작품을 삭제할까요?')){artworks=artworks.filter(a=>a.id!==id);cart=cart.filter(c=>c.id!==id);saveArtworks();saveCart();render();}}
+
+// INIT
+updateCount();
+if(isAdmin){document.getElementById('admin-nav-btn').style.display='';document.getElementById('admin-mob-btn').style.display='';}
+render();
+</script>
+</body>
+</html>
